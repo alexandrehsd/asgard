@@ -32,7 +32,7 @@ def main():
                         help="Train ratio size", default=0.8)
     parser.add_argument("-arg6", "--validation_ratio", type=float, required=False,
                         help="Validation ratio size", default=0.1)
-    parser.add_argument("-arg7", "--preprocessing_truncation", type=str, required=False,
+    parser.add_argument("-arg7", "--text_truncation", type=str, required=False,
                         help="Text standardization method (available options are 'lemma', 'stem', or None)",
                         default="lemma")
     parser.add_argument("-arg8", "--batch_size", type=int, required=False,
@@ -49,7 +49,7 @@ def main():
     train_ratio = args.train_ratio
     validation_ratio = args.validation_ratio
     if train_ratio + validation_ratio > 1:
-        raise ValueError("The sum of the train_ration and the validation_ratio cannot be greater than 1.")
+        raise ValueError("The sum of the train_ratio and the validation_ratio cannot be greater than 1.")
 
     data_split = split_dataset(dataset, train_ratio=train_ratio, validation_ratio=validation_ratio,
                                random_state=random_state)
@@ -62,7 +62,7 @@ def main():
     logging.info(f"The Validation set has {X_valid.shape[0]} records.")
     logging.info(f"The Test set has {X_test.shape[0]} records.")
 
-    truncation = args.preprocessing_truncation
+    truncation = args.text_truncation
 
     logging.info("Preprocessing the training set titles.")
     X_train, y_train = preprocess_data(X_train, y_train, truncation=truncation)
@@ -88,16 +88,11 @@ def main():
     output_path = args.output_tf_filepath
 
     # stores tf datasets
+    logging.info("Storing the output datasets.")
     tf.data.experimental.save(train_set, os.path.join(output_path, "train_set"))
     tf.data.experimental.save(valid_set, os.path.join(output_path, "valid_set"))
     tf.data.experimental.save(test_set, os.path.join(output_path, "test_set"))
 
 
 if __name__ == "__main__":
-    current_dir = os.path.abspath(os.path.dirname(__file__))
-    parent_dir = os.path.abspath(os.path.join(current_dir, '..', '..'))
-    os.chdir(parent_dir)
-
     main()
-
-    # python script.py --argument_one value1 -arg2 20
