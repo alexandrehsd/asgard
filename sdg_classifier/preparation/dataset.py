@@ -6,11 +6,8 @@ import numpy as np
 import pandas as pd
 
 from sklearn.preprocessing import MultiLabelBinarizer
+from tqdm import tqdm
 from langdetect import detect
-
-current_dir = os.path.abspath(os.path.dirname(__file__))
-parent_dir = os.path.abspath(os.path.join(current_dir, '..', '..'))
-os.chdir(parent_dir)
 
 from sdg_classifier.utils.monitor import LOGGER
 
@@ -25,7 +22,7 @@ def load_datasets(csv_filepath):
     return datasets
 
 
-def build_dataset(datasets):
+def build_dataset(datasets, random_state=42):
     for i, dataset in enumerate(datasets):
         mlb = MultiLabelBinarizer()
         targets = mlb.fit_transform(dataset["Sustainable Development Goals (2021)"]
@@ -41,7 +38,16 @@ def build_dataset(datasets):
     for dataset in datasets:
         sdg_datasets.append(dataset)
 
-    dataset = pd.concat(sdg_datasets)
+    dataset = (
+        pd.concat(sdg_datasets)
+        .rename(columns={"Title": "text"})
+        .sample(frac=1, random_state=random_state)
+        .reset_index(drop=True)
+    )
+
+    columns = ["text", "SDG1", "SDG2", "SDG3", "SDG4", "SDG5", "SDG6", "SDG7", "SDG8", "SDG9",
+               "SDG10", "SDG11", "SDG12", "SDG13", "SDG14", "SDG15", "SDG16"]
+    dataset = dataset[columns]
 
     return dataset
 
@@ -55,12 +61,11 @@ def remove_duplicates(dataset):
     text_data = dataset[["text"]].copy()
     SDG_columns = [col for col in dataset.columns if col.startswith('SDG')]
 
-    duplicated_titles = text_data["text"].value_counts()
-    duplicated_titles = duplicated_titles[duplicated_titles > 1]
-    titles = list(duplicated_titles.index)
+    title_counts = text_data["text"].value_counts()
+    duplicated_titles = title_counts[title_counts > 1].index.tolist()
 
     aggregated_rows = []
-    for title in titles:
+    for title in duplicated_titles:
         title_data = dataset[SDG_columns].loc[dataset["text"] == title, :]
         sdgs = title_data.sum(axis=0) > 0
         sdgs = sdgs.astype(int).tolist()
@@ -71,12 +76,11 @@ def remove_duplicates(dataset):
         aggregated_rows.append(agg_data)
     deduplicated_records = pd.DataFrame(aggregated_rows, columns=["text"] + SDG_columns)
 
-    dataset = (dataset
-               .loc[~dataset["text"].isin(titles)]
-               .append(deduplicated_records, ignore_index=True)
-               )
+    deduplicated_dataset = dataset.loc[~dataset["text"].isin(duplicated_titles)]
+    deduplicated_dataset = pd.concat([deduplicated_dataset, deduplicated_records],
+                                     ignore_index=True)
 
-    return dataset
+    return deduplicated_dataset
 
 
 def is_english(text):
@@ -87,12 +91,18 @@ def is_english(text):
         return False
 
 
-def filter_english_text(dataset):
-    is_en = [is_english(text) for text in dataset["text"]]
+def filter_english_text(dataset, progress_bar=False):
+
+    if progress_bar:
+        texts = tqdm(dataset["text"])
+    else:
+        texts = dataset["text"]
+
+    is_en = [is_english(text) for text in texts]
     return dataset[is_en]
 
 
-def balance_multilabel_dataset(dataset):
+def balance_multilabel_dataset(dataset, quantile=0.5, random_state=42):
     """
     Balance the counts of target labels in a multilabel dataset.
 
@@ -100,144 +110,87 @@ def balance_multilabel_dataset(dataset):
     classes with more instances until all classes have the same count of instances. The sample is chosen so
     that it maintains the ratio of labels within the target columns.
 
-    The steps of the process are:
-
-    1. Identifying the class with the lowest number of instances and the count of that class.
-    2. Initializing a new dataset with instances that belong to the base class.
-    3. Identifying classes that have more instances than the base class count, and marking them as "intransigent."
-    4. Adding instances from the other classes to the new dataset, until they have a count that is at most equal to the base class count.
-    5. Repeat the previous step until either the compromised classes have stabilized, or there are no more instances to add.
-    6. Finally, merging the titles with the balanced targets and returning the final balanced dataset.
-
-    Args:
-    - dataset (pd.DataFrame): The input dataset with target labels. The dataset must have two columns:
-      "text" and multiple binary target columns (e.g., "SDG1", "SDG2", etc.).
+    Parameters:
+    dataset (dataframe): The unbalanced dataset
+    quantile (float, optional): the quantile of the counts of labels at which to balance the dataset.
+    If you choose 1, the dataset will remain the same. If you choose 0, than the dataset will be almost
+    as balanced as possible. however, you'll probably lose many data. Default value is 0.5 (median).
+    random_state (int, optional): the random seed used to sample the dataframe. Default is 42.
 
     Returns:
-    - pd.DataFrame: The balanced dataset with the same structure as the input, but with balanced target label counts.
-
+    dataset (dataframe): a balanced dataset.
     Example:
     >>> unbalanced_dataset = pd.read_csv("unbalanced_dataset.csv")
     >>> balanced_dataset = balance_multilabel_dataset(unbalanced_dataset)
     """
-    titles = dataset[["text"]]
+    # compute the overall counts of labels in the dataset before multilabel balancing
+    sdg_counts = dataset.iloc[:, 1:].sum(axis=0)
 
-    SDG_columns = [col for col in dataset.columns if col.startswith('SDG')]
-    target_columns = dataset[SDG_columns]
+    # compute the quantile label count and identify those labels below it
+    quantile_label_count = np.quantile(sdg_counts, q=quantile)
 
-    # TODO: Refactor this code to be independent from the sequence of files that is inputed
-    # Step 1: Find the class with the minimum number of instances
-    class_counts = target_columns.sum(axis=0)
-    minimum_count, base_class_index = np.min(class_counts), np.argmin(class_counts)
+    # compute the number of samples to add from each label to reach the quantile of the
+    # number of samples
+    samples_to_add = quantile_label_count - sdg_counts
+    samples_to_add[samples_to_add < 0] = quantile_label_count
 
-    # Step 2: Initialize the "keeper" dataset with all instances of the minimum class
-    initial_keeper = target_columns[target_columns.iloc[:, base_class_index] == 1]
-    remaining_targets = target_columns[target_columns.iloc[:, base_class_index] == 0]
+    # sort label from the minimum to maximum label count
+    sorted_labels = dataset.iloc[:, 1:].sum(axis=0).sort_values().index.tolist()
 
-    # Step 3: Keep track of which classes still have more instances than minimum_class_count
-    classes_with_minimum_count = np.sum(initial_keeper, axis=0) >= minimum_count
+    balanced_dataset = pd.DataFrame(columns=dataset.columns)
 
-    while True:
-        # Step 4: Identify classes that have been reduced to the minimum class count
-        classes_with_less_count = np.sum(initial_keeper, axis=0) < minimum_count
+    for label in sorted_labels:
+        # compute the number of records that must be sampled for current label
+        label_samples_to_add = int(samples_to_add[label])
+        samples_available = np.sum(dataset[label] == 1)
 
-        # Step 5: If no classes have changed, break the loop
-        if np.all(classes_with_minimum_count == classes_with_less_count):
-            break
+        label_has_samples_available = samples_available > 0
+        label_needs_more_samples = label_samples_to_add > 0
 
-        # Step 4.1: Classes that are still over the minimum count
-        classes_with_minimum_count_indexes = np.concatenate(np.argwhere(np.array(~classes_with_less_count)))
+        if label_has_samples_available and label_needs_more_samples:
+            # creates a mask to filter the dataset with the samples from current label
+            samples_from_selected_label = dataset[label] == 1
 
-        # Step 4.2: Instances of the target_columns that don't belong to any class in
-        # `classes_with_minimum_count_indexes`
-        balance_mask = np.full((remaining_targets.shape[0],), True)
-        for index in classes_with_minimum_count_indexes:
-            balance_mask = balance_mask & (remaining_targets.iloc[:, index] == 0)
+            # guarantee that it will not try to add more samples than there is available
+            if label_samples_to_add > samples_available:
+                label_samples_to_add = samples_available
 
-        targets_to_add = remaining_targets.loc[balance_mask, :]
-        remaining_targets = remaining_targets.loc[balance_mask, :]
+            # samples the dataset
+            selected_samples = (
+                dataset[samples_from_selected_label]
+                .sample(n=label_samples_to_add, random_state=random_state)
+            )
 
-        # Step 5.1: If there are no instances left in targets_to_add, break the loop
-        if sum(np.sum(targets_to_add)) == 0:
-            break
+            # remove the selected samples from the dataset in order
+            # to avoid those samples in the next iteration
+            dataset = dataset[~samples_from_selected_label]
 
-        # Step 4.3: Identify the first class that have less indexes than the minimum
-        classes_with_less_count_indexes = np.array(classes_with_less_count).nonzero()[0]
+            # concatenate the balanced_dataset with the selected_samples
+            balanced_dataset = pd.concat([balanced_dataset, selected_samples])
 
-        if len(classes_with_less_count_indexes) > 0:
-            class_to_add_to = np.array(classes_with_less_count).nonzero()[0][0]
-
-            # Step 4.4: Determine the number of instances in "targets_to_add" that belong to the
-            # classes_with_less_count set
-            sampleable_count = np.sum(targets_to_add.iloc[:, class_to_add_to])
-
-            # Step 4.5: Determine the number of instances needed to balance the classes_with_less_count set in
-            # "initial_keeper"
-            samples_needed = minimum_count - np.sum(initial_keeper, axis=0)[classes_with_less_count_indexes[0]]
-
-            # Take the maximum number of instances from targets_to_add
-            if samples_needed > sampleable_count:
-                samples_needed = sampleable_count
-
-            # Step 4.6: Limit "sample_needed" to the number of available sampleable instances
-            remaining_targets = remaining_targets.loc[targets_to_add.iloc[:, class_to_add_to] == 0, :]
-            targets_to_add = targets_to_add[targets_to_add.iloc[:, class_to_add_to] == 1][:samples_needed]
-
-        # Update initial_keeper and classes_with_minimum_count sets for the next iteration
-        initial_keeper = pd.concat([initial_keeper, targets_to_add])
-        classes_with_minimum_count = classes_with_less_count
-
-    balanced_targets = initial_keeper.astype(np.float32)
-
-    balanced_targets["index"] = balanced_targets.index
-    titles = titles.assign(index=titles.index)
-    balanced_dataset = (balanced_targets
-                        .merge(titles, how="left", on="index")
-                        .set_index("index")
-                        )
-
-    columns = ["text", "SDG1", "SDG2", "SDG3", "SDG4", "SDG5", "SDG6", "SDG7", "SDG8", "SDG9",
-               "SDG10", "SDG11", "SDG12", "SDG13", "SDG14", "SDG15", "SDG16"]
-    balanced_dataset = balanced_dataset[columns]
+        # update the counts of samples to be added to the next labels
+        balanced_label_count = balanced_dataset.iloc[:, 1:].sum(axis=0)
+        samples_to_add = quantile_label_count - balanced_label_count
 
     return balanced_dataset
 
 
-def load_dataset(csv_filepath="./data/csv/sdg"):
+def load_dataset(csv_filepath="./data/csv/sdg", balance_quantile=0.5, random_state=42,
+                 english_text_filter_pbar=True):
     csv_filepath = os.path.join(csv_filepath, "*.csv")
 
     LOGGER.info("Loading and building datasets.")
     datasets = load_datasets(csv_filepath)
-    dataset = build_dataset(datasets)
+    dataset = build_dataset(datasets, random_state=random_state)
 
     LOGGER.info("Removing duplicate text entries.")
     dataset = remove_duplicates(dataset)
 
     LOGGER.info("Filtering english texts.")
-    dataset = filter_english_text(dataset)
+    dataset = filter_english_text(dataset, progress_bar=english_text_filter_pbar)
 
     LOGGER.info("Balancing the dataset.")
-    dataset = balance_multilabel_dataset(dataset)
+    balanced_dataset = balance_multilabel_dataset(dataset, quantile=balance_quantile,
+                                                  random_state=random_state)
 
-    return dataset
-
-# import pandas as pd
-# from sklearn.utils import resample
-#
-# def balance_dataset(df):
-#     # Create a list of the target label columns
-#     label_cols = [col for col in df.columns if col != 'text']
-#
-#     # Split the dataframe into separate dataframes for each target label
-#     label_dfs = [df[df[col] == 1] for col in label_cols]
-#
-#     # Get the size of the largest dataframe
-#     max_size = max([len(label_df) for label_df in label_dfs])
-#
-#     # Resample each dataframe to have the same size as the largest dataframe
-#     resampled_dfs = [resample(label_df, replace=True, n_samples=max_size, random_state=42) for label_df in label_dfs]
-#
-#     # Concatenate the resampled dataframes into a single dataframe
-#     balanced_df = pd.concat(resampled_dfs)
-#
-#     return balanced_df
+    return balanced_dataset
