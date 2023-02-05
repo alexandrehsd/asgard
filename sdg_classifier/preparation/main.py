@@ -21,19 +21,23 @@ def create_dataset(X, y):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-arg1", "--input_csv_filepath", type=str, required=True,
-                        help="input path to the raw CSV data")
+                        help="Input path to the raw CSV data")
     parser.add_argument("-arg2", "--output_tf_filepath", type=str, required=True,
-                        help="output path to the Tensorflow data")
+                        help="Output path to the Tensorflow data")
     parser.add_argument("-arg3", "--seed", type=int, required=False,
-                        help="Random Seed", default=42)
-    parser.add_argument("-arg4", "--train_ratio", type=float, required=False,
+                        help="Random seed", default=42)
+    parser.add_argument("-arg4", "--quantile", type=float, required=False,
+                        help="Dataset balance quantile", default=0.5)
+    parser.add_argument("-arg5", "--english_text_filter_pbar", type=bool, required=False,
+                        help="Show progress bar while filtering english texts", default=True)
+    parser.add_argument("-arg6", "--train_ratio", type=float, required=False,
                         help="Train ratio size", default=0.8)
-    parser.add_argument("-arg5", "--validation_ratio", type=float, required=False,
+    parser.add_argument("-arg7", "--validation_ratio", type=float, required=False,
                         help="Validation ratio size", default=0.1)
-    parser.add_argument("-arg6", "--preprocessing_truncation", type=str, required=False,
+    parser.add_argument("-arg8", "--preprocessing_truncation", type=str, required=False,
                         help="Text standardization method (available options are 'lemma', 'stem', or None)",
                         default="lemma")
-    parser.add_argument("-arg7", "--batch_size", type=int, required=False,
+    parser.add_argument("-arg9", "--batch_size", type=int, required=False,
                         help="Tensorflow batch size", default=32)
 
     args = parser.parse_args()
@@ -42,7 +46,8 @@ def main():
     np.random.seed(random_state)
     random.seed(random_state)
 
-    dataset = load_dataset(args.input_csv_filepath)
+    dataset = load_dataset(args.input_csv_filepath, args.quantile,
+                           random_state, args.english_text_filter_pbar)
 
     train_ratio = args.train_ratio
     validation_ratio = args.validation_ratio
