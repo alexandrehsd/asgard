@@ -6,8 +6,6 @@ import numpy as np
 import pandas as pd
 
 from sklearn.preprocessing import MultiLabelBinarizer
-from tqdm import tqdm
-from langdetect import detect
 
 from sdg_classifier.utils.monitor import LOGGER
 
@@ -83,25 +81,6 @@ def remove_duplicates(dataset):
     return deduplicated_dataset
 
 
-def is_english(text):
-    try:
-        language = detect(text)
-        return language == 'en'
-    except:
-        return False
-
-
-def filter_english_text(dataset, progress_bar=False):
-
-    if progress_bar:
-        texts = tqdm(dataset["text"])
-    else:
-        texts = dataset["text"]
-
-    is_en = [is_english(text) for text in texts]
-    return dataset[is_en]
-
-
 def balance_multilabel_dataset(dataset, quantile=0.5, random_state=42):
     """
     Balance the counts of target labels in a multilabel dataset.
@@ -175,8 +154,7 @@ def balance_multilabel_dataset(dataset, quantile=0.5, random_state=42):
     return balanced_dataset
 
 
-def load_dataset(csv_filepath="./data/csv/sdg", balance_quantile=0.5, random_state=42,
-                 english_text_filter_pbar=True):
+def load_dataset(csv_filepath="./data/csv/sdg", balance_quantile=0.5, random_state=42):
     csv_filepath = os.path.join(csv_filepath, "*.csv")
 
     LOGGER.info("Loading and building datasets.")
@@ -185,9 +163,6 @@ def load_dataset(csv_filepath="./data/csv/sdg", balance_quantile=0.5, random_sta
 
     LOGGER.info("Removing duplicate text entries.")
     dataset = remove_duplicates(dataset)
-
-    LOGGER.info("Filtering english texts.")
-    dataset = filter_english_text(dataset, progress_bar=english_text_filter_pbar)
 
     LOGGER.info("Balancing the dataset.")
     balanced_dataset = balance_multilabel_dataset(dataset, quantile=balance_quantile,
