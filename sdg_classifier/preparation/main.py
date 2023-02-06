@@ -2,21 +2,40 @@
 import os
 import argparse
 import random
-import logging
 
 import numpy as np
-import pandas as pd
 import tensorflow as tf
 
 from dataset import load_dataset
 from preprocessing import preprocess_data
 from model_selection import split_dataset
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
+from sdg_classifier.utils.monitor import LOGGER
 
 
 def create_dataset(X, y):
     return tf.data.Dataset.from_tensor_slices((tf.constant(X), tf.constant(y)))
+
+
+def log_label_counts(y_train, y_valid, y_test, labels):
+    # Count labels for each data set
+    train_counts = y_train.sum(axis=0)
+    train_label_counts = {labels[i]: train_counts[i] for i in range(len(labels))}
+
+    LOGGER.info(f"The Train set has {y_train.shape[0]} records. Label counts:\n"
+                f"{train_label_counts}")
+
+    valid_counts = y_valid.sum(axis=0)
+    valid_label_counts = {labels[i]: valid_counts[i] for i in range(len(labels))}
+
+    LOGGER.info(f"The Validation set has {y_valid.shape[0]} records. Label counts:\n"
+                f"{valid_label_counts}")
+
+    test_counts = y_test.sum(axis=0)
+    test_label_counts = {labels[i]: test_counts[i] for i in range(len(labels))}
+
+    LOGGER.info(f"The Test set has {y_test.shape[0]} records. Label counts:\n"
+                f"{test_label_counts}")
 
 
 def main():
@@ -62,33 +81,16 @@ def main():
 
     truncation = args.text_truncation
 
-    logging.info("Preprocessing the training set titles.")
+    LOGGER.info("Preprocessing the training set titles.")
     X_train, y_train = preprocess_data(X_train, y_train, truncation=truncation)
 
-    logging.info("Preprocessing the validation set titles.")
+    LOGGER.info("Preprocessing the validation set titles.")
     X_valid, y_valid = preprocess_data(X_valid, y_valid, truncation=truncation)
 
-    logging.info("Preprocessing the test set titles.")
+    LOGGER.info("Preprocessing the test set titles.")
     X_test, y_test = preprocess_data(X_test, y_test, truncation=truncation)
 
-    # Count labels for each data set
-    train_counts = y_train.sum(axis=0)
-    train_label_counts = {labels[i]: train_counts[i] for i in range(len(labels))}
-
-    logging.info(f"The Train set has {X_train.shape[0]} records. Label counts:\n"
-                 f"{train_label_counts}")
-
-    valid_counts = y_valid.sum(axis=0)
-    valid_label_counts = {labels[i]: valid_counts[i] for i in range(len(labels))}
-
-    logging.info(f"The Validation set has {X_valid.shape[0]} records. Label counts:\n"
-                 f"{valid_label_counts}")
-
-    test_counts = y_test.sum(axis=0)
-    test_label_counts = {labels[i]: test_counts[i] for i in range(len(labels))}
-
-    logging.info(f"The Test set has {X_test.shape[0]} records. Label counts:\n"
-                 f"{test_label_counts}")
+    log_label_counts(y_train, y_valid, y_test, labels)
 
     batch_size = args.batch_size
 
@@ -105,7 +107,7 @@ def main():
     output_path = args.output_tf_filepath
 
     # stores tf datasets
-    logging.info("Storing the output datasets.")
+    LOGGER.info("Storing the output datasets.")
     tf.data.experimental.save(train_set, os.path.join(output_path, "train_set"))
     tf.data.experimental.save(valid_set, os.path.join(output_path, "valid_set"))
     tf.data.experimental.save(test_set, os.path.join(output_path, "test_set"))
