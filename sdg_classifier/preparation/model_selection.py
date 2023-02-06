@@ -23,8 +23,8 @@ def split_dataset(data, train_ratio=0.8, validation_ratio=0.1, random_state=42):
     validation = data[train_end_index:validation_end_index]
     test = data[validation_end_index:]
 
-    return {"train": (np.array(train["text"]), np.array(train.iloc[:, 1:])),
-            "validation": (np.array(validation["text"]), np.array(validation.iloc[:, 1:])),
-            "test": (np.array(test["text"]), np.array(test.iloc[:, 1:])),
-            "columns": list(data.columns[1:])
+    return {"train": (np.array(train["text"]), np.array(train.iloc[:, 1:], dtype=np.float32)),
+            "validation": (np.array(validation["text"]), np.array(validation.iloc[:, 1:], dtype=np.float32)),
+            "test": (np.array(test["text"]), np.array(test.iloc[:, 1:], dtype=np.float32)),
+            "labels": list(data.columns[1:])
             }
