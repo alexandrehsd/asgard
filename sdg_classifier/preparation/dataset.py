@@ -60,10 +60,10 @@ def remove_duplicates(dataset):
     SDG_columns = [col for col in dataset.columns if col.startswith('SDG')]
 
     title_counts = text_data["text"].value_counts()
-    duplicated_titles = title_counts[title_counts > 1].index.tolist()
+    duplicate_titles = title_counts[title_counts > 1].index.tolist()
 
     aggregated_rows = []
-    for title in duplicated_titles:
+    for title in duplicate_titles:
         title_data = dataset[SDG_columns].loc[dataset["text"] == title, :]
         sdgs = title_data.sum(axis=0) > 0
         sdgs = sdgs.astype(int).tolist()
@@ -72,13 +72,13 @@ def remove_duplicates(dataset):
         agg_data.extend(sdgs)
 
         aggregated_rows.append(agg_data)
-    deduplicated_records = pd.DataFrame(aggregated_rows, columns=["text"] + SDG_columns)
+    deduplicate_records = pd.DataFrame(aggregated_rows, columns=["text"] + SDG_columns)
 
-    deduplicated_dataset = dataset.loc[~dataset["text"].isin(duplicated_titles)]
-    deduplicated_dataset = pd.concat([deduplicated_dataset, deduplicated_records],
-                                     ignore_index=True)
+    deduplicate_dataset = dataset.loc[~dataset["text"].isin(duplicate_titles)]
+    deduplicate_dataset = pd.concat([deduplicate_dataset, deduplicate_records],
+                                    ignore_index=True)
 
-    return deduplicated_dataset
+    return deduplicate_dataset
 
 
 def balance_multilabel_dataset(dataset, quantile=0.5, random_state=42):
@@ -161,7 +161,7 @@ def load_dataset(csv_filepath="./data/csv/sdg", balance_quantile=0.5, random_sta
     datasets = load_datasets(csv_filepath)
     dataset = build_dataset(datasets, random_state=random_state)
 
-    LOGGER.info("Removing duplicate text entries.")
+    LOGGER.info("Removing duplicate titles.")
     dataset = remove_duplicates(dataset)
 
     LOGGER.info("Balancing the dataset.")
