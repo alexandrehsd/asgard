@@ -2,6 +2,7 @@
 import os
 import argparse
 import random
+import pprint
 
 import numpy as np
 import tensorflow as tf
@@ -22,20 +23,19 @@ def log_label_counts(y_train, y_valid, y_test, labels):
     train_counts = y_train.sum(axis=0)
     train_label_counts = {labels[i]: train_counts[i] for i in range(len(labels))}
 
-    LOGGER.info(f"The Train set has {y_train.shape[0]} records. Label counts:\n"
-                f"{train_label_counts}")
+    pprint.pprint(f"The Train set has {y_train.shape[0]} records. Label counts:\n"
+                  f"{train_label_counts}")
 
     valid_counts = y_valid.sum(axis=0)
     valid_label_counts = {labels[i]: valid_counts[i] for i in range(len(labels))}
-
-    LOGGER.info(f"The Validation set has {y_valid.shape[0]} records. Label counts:\n"
-                f"{valid_label_counts}")
+    pprint.pprint(f"The Validation set has {y_valid.shape[0]} records. Label counts:\n"
+                  f"{valid_label_counts}")
 
     test_counts = y_test.sum(axis=0)
     test_label_counts = {labels[i]: test_counts[i] for i in range(len(labels))}
 
-    LOGGER.info(f"The Test set has {y_test.shape[0]} records. Label counts:\n"
-                f"{test_label_counts}")
+    pprint.pprint(f"The Test set has {y_test.shape[0]} records. Label counts:\n"
+                  f"{test_label_counts}")
 
 
 def main():

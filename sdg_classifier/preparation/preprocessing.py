@@ -56,7 +56,7 @@ def preprocess_data(X, y, truncation="lemma"):
     Z = ["".join([char for char in normalize("NFKD", text) if not combining(char)]) for text in Z]
 
     # Tokenize text, remove stopwords and punctuation
-    LOGGER.info("[Preprocess - 1/2] Tokenizing texts, removing stopwords and punctuation.")
+    LOGGER.info("[Preprocessing - 1/2] Tokenizing texts, removing stopwords and punctuation.")
     nlp = spacy.load("en_core_web_lg")
     Z = [[token.text for token in nlp(sentence) if (not token.is_stop) and (not token.is_punct)]
          for sentence in tqdm(Z)]
@@ -64,7 +64,7 @@ def preprocess_data(X, y, truncation="lemma"):
     # Remove titles with less than 3 words at the end of the code
     has_more_than_two_words = [len(text_list) > 2 for text_list in Z]
 
-    LOGGER.info("[Preprocess - 2/2] Lemmatizing texts.")
+    LOGGER.info("[Preprocessing - 2/2] Standardizing texts.")
     # Lemmatizing
     if truncation == "lemma":
         # Concatenate tokens
