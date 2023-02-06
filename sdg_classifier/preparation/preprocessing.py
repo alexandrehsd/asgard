@@ -1,12 +1,10 @@
 # Import necessary modules
 import subprocess
 import numpy as np
-import spacy
-import nltk
 import string
-from nltk.tokenize import word_tokenize
+import spacy
+
 from nltk.stem import SnowballStemmer
-import re
 
 from unicodedata import normalize, combining
 from tqdm import tqdm
@@ -21,19 +19,6 @@ def load_nltk_tools():
         subprocess.run(["python", "-m", "spacy", "download", "en_core_web_lg"])
         _ = spacy.load("en_core_web_lg")
         print("The 'en_core_web_lg' model has been successfully installed.")
-
-    nltk.download('punkt')
-    nltk.download('stopwords')
-
-
-def get_stopwords():
-    nltk_stopwords = nltk.corpus.stopwords.words("english")
-    spacy_en = spacy.load("en_core_web_lg")
-    spacy_stopwords = spacy_en.Defaults.stop_words
-
-    stopwords = list(set(spacy_stopwords).union(set(nltk_stopwords)))
-
-    return stopwords
 
 
 def preprocess_data(X, y, truncation="lemma"):
@@ -60,24 +45,22 @@ def preprocess_data(X, y, truncation="lemma"):
     # Convert text to lowercase
     Z = [text.lower() for text in X]
 
-    # Remove special characters
+    # Remove special characters and numbers
     Z = [text.translate(str.maketrans("", "", string.punctuation + "123456789")) for text in Z]
 
-    # Remove numbers
-    Z = [re.sub(r"^\d+\s|\s\d+\s|\s\d+$|\d+\)", ' ', text) for text in Z]
-
     # Remove double spaces
-    Z = [re.sub(r"\s+[a-zA-Z]\s+", ' ', text) for text in Z]
+    Z = [' '.join(text.split()) for text in Z]
 
     # Remove accents
     Z = ["".join([char for char in normalize("NFKD", text) if not combining(char)]) for text in Z]
 
-    # Tokenize text
-    Z = [word_tokenize(text) for text in Z]
+    # Tokenize text, remove stopwords and punctuation
+    nlp = spacy.load("en_core_web_lg")
+    Z = [[token.text for token in nlp(sentence) if (not token.is_stop) and (not token.is_punct)]
+         for sentence in Z]
 
-    # Remove stopwords
-    stopwords = get_stopwords()
-    Z = [list((word for word in tokens if ((word not in stopwords) and (len(word) > 1)))) for tokens in Z]
+    # Remove titles with less than 3 words at the end of the code
+    has_more_than_two_words = [len(text_list) > 2 for text_list in Z]
 
     # Lemmatizing
     if truncation == "lemma":
@@ -85,7 +68,6 @@ def preprocess_data(X, y, truncation="lemma"):
         Z = [" ".join(tokens) for tokens in Z]
 
         # Lemmatize sentences
-        nlp = spacy.load("en_core_web_lg")
         lemmatize = lambda sentence: " ".join([token.lemma_ for token in nlp(sentence)])
         Z = [lemmatize(text) for text in tqdm(Z)]
 
@@ -101,8 +83,7 @@ def preprocess_data(X, y, truncation="lemma"):
     Z = np.array(Z)
 
     # Discard empty sentences
-    non_empty_sentences = Z != ""
-    y = y[non_empty_sentences]
-    Z = Z[non_empty_sentences]
+    y = y[has_more_than_two_words]
+    Z = Z[has_more_than_two_words]
 
     return Z, y
