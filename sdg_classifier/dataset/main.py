@@ -7,7 +7,7 @@ import pprint
 import numpy as np
 import tensorflow as tf
 
-from dataset import load_dataset
+from loader import load_dataset
 from preprocessing import preprocess_data
 from model_selection import split_dataset
 
