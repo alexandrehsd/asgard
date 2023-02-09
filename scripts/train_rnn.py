@@ -1,5 +1,8 @@
 import os
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'  # noqa E402
+
 import argparse
+import numpy as np
 from tensorflow import keras
 
 from sdg_classifier.models.rnn.logging import get_run_logdir, log_to_wandb
@@ -7,6 +10,7 @@ from sdg_classifier.models.rnn.rnn import create_text_vectorization_layer, build
 from sdg_classifier.models.rnn.weights import get_class_weight, get_weighted_loss
 from sdg_classifier.utils.data_loader import load_datasets
 from sdg_classifier.utils.monitor import LOGGER
+from sdg_classifier.metrics.metrics import print_multilabel_metrics, compute_binary_metrics
 
 
 # noinspection PyShadowingNames
@@ -53,15 +57,25 @@ def train_model(train_set, valid_set, test_set, class_weight_kind, optimizer, le
     callbacks = [tensorboard_cb, early_stopping_cb]
 
     LOGGER.info("Fitting the model.")
-    # Fit model
     history = model.fit(train_set, validation_data=valid_set, epochs=epochs,
                         callbacks=callbacks)
 
     # Logging metrics
-    bce, accuracy = model.evaluate(test_set)
-    valid_bce, valid_accuracy = model.evaluate(valid_set)
     if log:
-        log_to_wandb(model, valid_set, test_set, bce, accuracy, valid_bce, valid_accuracy, model_dir)
+        log_to_wandb(model, test_set, bce, accuracy, valid_bce, valid_accuracy, model_dir)
+    else:
+        y_pred = ((model.predict(test_set) > 0.5) + 0)
+        y_true = np.concatenate([y.numpy() for X, y in test_set])
+        labels = [f"SDG{i+1}" for i in range(16)]
+
+        binary_metrics = compute_binary_metrics(y_true, y_pred, labels)
+
+        print(binary_metrics)
+        print_multilabel_metrics(y_true, y_pred)
+
+    # save model
+    model.save(model_dir)
+
     return model, history
 
 
@@ -87,7 +101,7 @@ if __name__ == "__main__":
     parser.add_argument("-arg9", "--output_sequence_length", type=int, required=False,
                         help="Standard output sequence length", default=70)
     parser.add_argument("-arg10", "--epochs", type=int, required=False,
-                        help="Number of epochs", default=50)
+                        help="Number of epochs", default=5)
 
     # learning rate arguments
     parser.add_argument("-arg11", "--initial_lr", type=float, required=False,

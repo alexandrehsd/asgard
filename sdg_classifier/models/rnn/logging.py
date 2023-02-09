@@ -16,19 +16,14 @@ def get_run_logdir(root_logdir):
 
 
 # To run this function, you must log in to your WandB account
-def log_to_wandb(model, valid_set, test_set, bce, accuracy, valid_bce,
-                 valid_accuracy, model_dir, save_model=True):
+def log_to_wandb(model, valid_set, test_set):
 
-    if save_model:
-        model.save(model_dir)
+    bce, accuracy = model.evaluate(test_set)
+    valid_bce, valid_accuracy = model.evaluate(valid_set)
 
     # Logging metrics
     y_pred = ((model.predict(test_set) > 0.5) + 0)
-    for i, (X, y) in enumerate(test_set):
-        if i > 0:
-            y_true = np.concatenate((y_true, y.numpy()))
-        else:
-            y_true = y.numpy()
+    y_true = np.concatenate([y.numpy() for X, y in test_set])
 
     em_ratio = exact_match_ratio(y_true, y_pred)
     overall_accuracy = hamming_score(y_true, y_pred)
