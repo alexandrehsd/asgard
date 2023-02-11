@@ -20,9 +20,11 @@ jobs:
       - name: Install dependencies
         run: |
           make install-dependencies
-      - name: Install packages
+      - name: Install application packages
         run:
           make requirements
+      - name: Install linting packages
+        run:
           make requirements-lint
       - name: Linting checks
         run:
