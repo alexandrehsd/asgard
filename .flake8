@@ -1,0 +1,21 @@
+[flake8]
+max-line-length = 88
+enable-extensions = G
+exclude = dist/,build/,.pytest_cache/,.git/,pip/,env/,venv/,deps/,_pypackages_/*
+ignore =
+    # S101: pytest uses python's assert so we need to ignore this rule
+    S101,
+    # W503: line breaks should occur before the binary operator
+    W503,
+    # Q000 Remove bad quotes
+    Q000
+    # E203 is not PEP8 compliant according to Black readme
+    E203
+    # I201 missing newline between import groups (third party packages)
+    I201
+    # E501 line too long (> 88 characters), ignore because of some config files
+    E501
+    # I100 Import statements are in the wrong order (the recommendations makes the code chaotic)
+    I100
+    # B028 passing variables surrounded by quotes in strings
+    B028
