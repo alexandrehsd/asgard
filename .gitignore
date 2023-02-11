@@ -129,4 +129,4 @@ dmypy.json
 .pyre/
 
 # ruff files
-.ruff_cache/*
+.ruff_cache/
