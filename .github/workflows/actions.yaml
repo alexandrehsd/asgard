@@ -29,3 +29,6 @@ jobs:
       - name: Linting checks
         run:
           make code-check
+      - name: Unit Tests
+        run:
+          make tests

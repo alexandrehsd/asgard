@@ -46,4 +46,6 @@ jupyter:
 code-check:
 	@pdm run ruff check --format=github .
 
-
+.PHONY: tests
+tests:
+	@pdm run pytest
