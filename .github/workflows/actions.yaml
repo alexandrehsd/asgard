@@ -21,6 +21,7 @@ jobs:
         run: |
           make install-dependencies
       - name: Install packages
+        run:
           make requirements
           make requirements-lint
       - name: Linting checks
