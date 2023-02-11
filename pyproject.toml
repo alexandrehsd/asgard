@@ -2,6 +2,7 @@
 [tool.pdm.dev-dependencies]
 test = [
     "pytest>=7.2.1",
+    "pytest-cov>=4.0.0",
 ]
 lint = [
     "ruff>=0.0.245",
@@ -114,4 +115,20 @@ max-complexity = 10
 # Ignore `E402` (import violations) in all `__init__.py` files, and in `path/to/file.py`.
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["E402"]
+
+# pytest configs
+[tool.pytest.ini_options]
+addopts = "--cov --cov-report term-missing --cov-fail-under 80"
+minversion = "7.2.1"
+testpaths = ["tests", "tests/unit"]
+
+[tool.coverage.run]
+source = ["asgard", "scripts"]
+omit = [
+    "asgard/__init__.py",
+    "asgard/dataset/__init__.py",
+    "asgard/metrics/__init__.py",
+    "asgard/models/__init__.py",
+    "asgard/utils/__init__.py",
+]
 
