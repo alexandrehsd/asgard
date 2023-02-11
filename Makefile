@@ -41,38 +41,9 @@ requirements-test:
 jupyter:
 	PYTHONPATH=$(shell pwd) python -m jupyter notebook
 
-.PHONY: flake-check
-## check PEP-8 style and other standards with flake8
-flake-check:
-	@echo ""
-	@echo "\033[33mFlake 8 Standards\033[0m"
-	@echo "\033[33m=================\033[0m"
-	@echo ""
-	@pdm run flake8 . \
-	&& echo "\n\n\033[32mSuccess\033[0m\n" || (echo \
-	"\n\n\033[31mFailure\033[0m\n\n\033[34mManually fix the offending \
-	issues\033[0m\n" && exit 1)
-
-.PHONY: black-check
-## check Black code style
-black-check:
-	@echo ""
-	@echo "\033[33mBlack Code Style\033[0m"
-	@echo "\033[33m================\033[0m"
-	@echo ""
-	@pdm run black --check  . \
-	&& echo "\n\n\033[32mSuccess\033[0m\n" || (pdm run black --diff . 2>&1 | grep -v -e reformatted -e done \
-	&& echo "\n\033[31mFailure\033[0m\n\n\
-	\033[34mRun \"\e[4mmake black\e[24m\" to apply style formatting to your code\
-	\033[0m\n" && exit 1)
-
-.PHONY: checks
+.PHONY: code-check
 ## perform code standards and style checks
-checks: black-check flake-check
-
-.PHONY: black
-## apply the Black code style to code
-black:
-	@pdm run black .
+code-check:
+	@pdm run ruff check --format=github .
 
 

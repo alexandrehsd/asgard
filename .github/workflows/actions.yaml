@@ -28,4 +28,4 @@ jobs:
           make requirements-lint
       - name: Linting checks
         run:
-          make checks
+          make code-check
