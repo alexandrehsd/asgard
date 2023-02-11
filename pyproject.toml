@@ -72,6 +72,8 @@ build-backend = "pdm.pep517.api"
 
 # ruff linting rules
 [tool.ruff]
+# The source code paths to consider, e.g., when resolving first- vs. third-party imports.
+src = ["asgard", "scripts", ]
 
 # Never enforce `E501` (line length violations).
 ignore = ["E501"]
