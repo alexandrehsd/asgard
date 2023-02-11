@@ -1,14 +1,14 @@
 # Import necessary modules
-import subprocess
-import numpy as np
 import string
+import subprocess
+from unicodedata import combining, normalize
+
+import numpy as np
 import spacy
-
 from nltk.stem import SnowballStemmer
-
-from unicodedata import normalize, combining
 from tqdm import tqdm
-from sdg_classifier.utils.monitor import LOGGER
+
+from asgard.utils.monitor import LOGGER
 
 
 def load_nltk_tools():
@@ -47,19 +47,33 @@ def preprocess_data(X, y, truncation="lemma"):
     Z = [text.lower() for text in X]
 
     # Remove special characters and numbers
-    Z = [text.translate(str.maketrans("", "", string.punctuation + "123456789")) for text in Z]
+    Z = [
+        text.translate(str.maketrans("", "", string.punctuation + "123456789"))
+        for text in Z
+    ]
 
     # Remove double spaces
-    Z = [' '.join(text.split()) for text in Z]
+    Z = [" ".join(text.split()) for text in Z]
 
     # Remove accents
-    Z = ["".join([char for char in normalize("NFKD", text) if not combining(char)]) for text in Z]
+    Z = [
+        "".join([char for char in normalize("NFKD", text) if not combining(char)])
+        for text in Z
+    ]
 
     # Tokenize text, remove stopwords and punctuation
-    LOGGER.info("[Preprocessing - 1/2] Tokenizing texts, removing stopwords and punctuation.")
+    LOGGER.info(
+        "[Preprocessing - 1/2] Tokenizing texts, removing stopwords and punctuation."
+    )
     nlp = spacy.load("en_core_web_lg")
-    Z = [[token.text for token in nlp(sentence) if (not token.is_stop) and (not token.is_punct)]
-         for sentence in tqdm(Z)]
+    Z = [
+        [
+            token.text
+            for token in nlp(sentence)
+            if (not token.is_stop) and (not token.is_punct)
+        ]
+        for sentence in tqdm(Z)
+    ]
 
     # Remove titles with less than 3 words at the end of the code
     has_more_than_two_words = [len(text_list) > 2 for text_list in Z]
@@ -71,7 +85,9 @@ def preprocess_data(X, y, truncation="lemma"):
         Z = [" ".join(tokens) for tokens in Z]
 
         # Lemmatize sentences
-        lemmatize = lambda sentence: " ".join([token.lemma_ for token in nlp(sentence)])
+        lemmatize = lambda sentence: " ".join(  # noqa E731
+            [token.lemma_ for token in nlp(sentence)]
+        )
         Z = [lemmatize(text) for text in tqdm(Z)]
 
     # Stemming

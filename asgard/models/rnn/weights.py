@@ -1,8 +1,6 @@
 import numpy as np
-
-import tensorflow as tf
-from tensorflow import keras
 from sklearn.utils.class_weight import compute_class_weight
+from tensorflow import keras
 
 
 def compute_class_weights(train_set):
@@ -17,7 +15,9 @@ def compute_class_weights(train_set):
     n_classes = y_train.shape[1]
     weights = np.empty([n_classes, 2])
     for i in range(n_classes):
-        weights[i] = compute_class_weight('balanced', classes=[0., 1.], y=y_train[:, i])
+        weights[i] = compute_class_weight(
+            "balanced", classes=[0.0, 1.0], y=y_train[:, i]
+        )
     return weights
 
 
@@ -27,8 +27,12 @@ def compute_class_weights(train_set):
 def get_weighted_loss(weights):
     def weighted_loss(y_train, y_pred):
         return keras.backend.mean(
-            (weights[:, 0] ** (1-y_train)) * (weights[:, 1] ** y_train)
-            * keras.backend.binary_crossentropy(y_train, y_pred), axis=-1)
+            (weights[:, 0] ** (1 - y_train))
+            * (weights[:, 1] ** y_train)
+            * keras.backend.binary_crossentropy(y_train, y_pred),
+            axis=-1,
+        )
+
     return weighted_loss
 
 
@@ -41,7 +45,7 @@ def get_class_weight(train_set, class_weight_kind="balanced"):
 
     elif class_weight_kind == "two-to-one":
         class_weights = np.zeros((16, 2))
-        class_weights[:, 0] = 1.
-        class_weights[:, 1] = 2.
+        class_weights[:, 0] = 1.0
+        class_weights[:, 1] = 2.0
 
     return class_weights

@@ -1,11 +1,16 @@
 import os
 import time
+
 import numpy as np
 import wandb
 
-from sdg_classifier.metrics.metrics import (
-    exact_match_ratio, hamming_score, hamming_loss,
-    precision_overall, recall_overall, f1_overall
+from asgard.metrics.metrics import (  # isort:skip
+    exact_match_ratio,
+    f1_overall,
+    hamming_loss,
+    hamming_score,
+    precision_overall,
+    recall_overall,
 )
 
 
@@ -17,12 +22,11 @@ def get_run_logdir(root_logdir):
 
 # To run this function, you must log in to your WandB account
 def log_to_wandb(model, valid_set, test_set):
-
     bce, accuracy = model.evaluate(test_set)
     valid_bce, valid_accuracy = model.evaluate(valid_set)
 
     # Logging metrics
-    y_pred = ((model.predict(test_set) > 0.5) + 0)
+    y_pred = (model.predict(test_set) > 0.5) + 0
     y_true = np.concatenate([y.numpy() for X, y in test_set])
 
     em_ratio = exact_match_ratio(y_true, y_pred)
@@ -32,15 +36,17 @@ def log_to_wandb(model, valid_set, test_set):
     recall = recall_overall(y_true, y_pred)
     f1 = f1_overall(y_true, y_pred)
 
-    wandb.log({
-        "Accuracy": accuracy,
-        "Validation Accuracy": valid_accuracy,
-        "Loss": bce,
-        "Validation Loss": valid_bce,
-        "Exact Match Ratio": em_ratio,
-        "Hamming Score": overall_accuracy,
-        "Hamming Loss": overall_loss,
-        "Overall Precision": precision,
-        "Overall Recall": recall,
-        "Overall F1": f1
-    })
+    wandb.log(
+        {
+            "Accuracy": accuracy,
+            "Validation Accuracy": valid_accuracy,
+            "Loss": bce,
+            "Validation Loss": valid_bce,
+            "Exact Match Ratio": em_ratio,
+            "Hamming Score": overall_accuracy,
+            "Hamming Loss": overall_loss,
+            "Overall Precision": precision,
+            "Overall Recall": recall,
+            "Overall F1": f1,
+        }
+    )

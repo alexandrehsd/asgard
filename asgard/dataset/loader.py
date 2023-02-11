@@ -1,13 +1,12 @@
 # Import necessary modules
-import os
 import glob
+import os
 
 import numpy as np
 import pandas as pd
-
 from sklearn.preprocessing import MultiLabelBinarizer
 
-from sdg_classifier.utils.monitor import LOGGER
+from asgard.utils.monitor import LOGGER
 
 
 def load_datasets(csv_filepath):
@@ -23,10 +22,11 @@ def load_datasets(csv_filepath):
 def build_dataset(datasets, random_state=42):
     for i, dataset in enumerate(datasets):
         mlb = MultiLabelBinarizer()
-        targets = mlb.fit_transform(dataset["Sustainable Development Goals (2021)"]
-                                    .str.replace(" ", "")
-                                    .str.split("|")
-                                    )
+        targets = mlb.fit_transform(
+            dataset["Sustainable Development Goals (2021)"]
+            .str.replace(" ", "")
+            .str.split("|")
+        )
         targets_dataframe = pd.DataFrame(targets, columns=mlb.classes_, dtype=np.int64)
 
         datasets[i] = pd.concat([datasets[i], targets_dataframe], axis=1)
@@ -43,8 +43,25 @@ def build_dataset(datasets, random_state=42):
         .reset_index(drop=True)
     )
 
-    columns = ["text", "SDG1", "SDG2", "SDG3", "SDG4", "SDG5", "SDG6", "SDG7", "SDG8", "SDG9",
-               "SDG10", "SDG11", "SDG12", "SDG13", "SDG14", "SDG15", "SDG16"]
+    columns = [
+        "text",
+        "SDG1",
+        "SDG2",
+        "SDG3",
+        "SDG4",
+        "SDG5",
+        "SDG6",
+        "SDG7",
+        "SDG8",
+        "SDG9",
+        "SDG10",
+        "SDG11",
+        "SDG12",
+        "SDG13",
+        "SDG14",
+        "SDG15",
+        "SDG16",
+    ]
     dataset = dataset[columns]
 
     return dataset
@@ -57,14 +74,14 @@ def remove_duplicates(dataset):
     # perform union set on labels for duplicated text entries but different target
     # sets
     text_data = dataset[["text"]].copy()
-    SDG_columns = [col for col in dataset.columns if col.startswith('SDG')]
+    sdg_columns = [col for col in dataset.columns if col.startswith("SDG")]
 
     title_counts = text_data["text"].value_counts()
     duplicate_titles = title_counts[title_counts > 1].index.tolist()
 
     aggregated_rows = []
     for title in duplicate_titles:
-        title_data = dataset[SDG_columns].loc[dataset["text"] == title, :]
+        title_data = dataset[sdg_columns].loc[dataset["text"] == title, :]
         sdgs = title_data.sum(axis=0) > 0
         sdgs = sdgs.astype(int).tolist()
 
@@ -72,11 +89,12 @@ def remove_duplicates(dataset):
         agg_data.extend(sdgs)
 
         aggregated_rows.append(agg_data)
-    deduplicate_records = pd.DataFrame(aggregated_rows, columns=["text"] + SDG_columns)
+    deduplicate_records = pd.DataFrame(aggregated_rows, columns=["text"] + sdg_columns)
 
     deduplicate_dataset = dataset.loc[~dataset["text"].isin(duplicate_titles)]
-    deduplicate_dataset = pd.concat([deduplicate_dataset, deduplicate_records],
-                                    ignore_index=True)
+    deduplicate_dataset = pd.concat(
+        [deduplicate_dataset, deduplicate_records], ignore_index=True
+    )
 
     return deduplicate_dataset
 
@@ -135,9 +153,8 @@ def balance_multilabel_dataset(dataset, quantile=0.5, random_state=42):
                 label_samples_to_add = samples_available
 
             # samples the dataset
-            selected_samples = (
-                dataset[samples_from_selected_label]
-                .sample(n=label_samples_to_add, random_state=random_state)
+            selected_samples = dataset[samples_from_selected_label].sample(
+                n=label_samples_to_add, random_state=random_state
             )
 
             # remove the selected samples from the dataset in order
@@ -165,7 +182,8 @@ def load_dataset(csv_filepath="./data/csv/sdg", balance_quantile=0.5, random_sta
     dataset = remove_duplicates(dataset)
 
     LOGGER.info("Balancing the dataset.")
-    balanced_dataset = balance_multilabel_dataset(dataset, quantile=balance_quantile,
-                                                  random_state=random_state)
+    balanced_dataset = balance_multilabel_dataset(
+        dataset, quantile=balance_quantile, random_state=random_state
+    )
 
     return balanced_dataset
