@@ -123,12 +123,13 @@ minversion = "7.2.1"
 testpaths = ["tests", "tests/unit"]
 
 [tool.coverage.run]
-source = ["asgard", "scripts"]
+source = ["asgard"]
 omit = [
     "asgard/__init__.py",
     "asgard/dataset/__init__.py",
+    "asgard/dataset/main.py",
     "asgard/metrics/__init__.py",
     "asgard/models/__init__.py",
-    "asgard/utils/__init__.py",
+    "asgard/utils/__init__.py"
 ]
 

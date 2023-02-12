@@ -1,4 +1,3 @@
-# Import necessary modules
 import argparse
 import os
 import pprint

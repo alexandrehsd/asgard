@@ -1,4 +1,3 @@
-# Import necessary modules
 import glob
 import os
 

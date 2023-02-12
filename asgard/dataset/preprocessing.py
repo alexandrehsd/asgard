@@ -1,4 +1,3 @@
-# Import necessary modules
 import string
 import subprocess
 from unicodedata import combining, normalize
