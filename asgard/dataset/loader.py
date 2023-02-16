@@ -170,7 +170,7 @@ def balance_multilabel_dataset(dataset, quantile=0.5, random_state=42):
     return balanced_dataset
 
 
-def load_dataset(csv_filepath="./data/csv/sdg", balance_quantile=0.5, random_state=42):
+def load_dataset(csv_filepath="./data/raw/sdg", balance_quantile=0.5, random_state=42):
     csv_filepath = os.path.join(csv_filepath, "*.csv")
 
     LOGGER.info("Loading and building datasets.")
