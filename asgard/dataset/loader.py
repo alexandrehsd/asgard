@@ -42,27 +42,10 @@ def build_dataset(datasets, random_state=42):
         .reset_index(drop=True)
     )
 
-    columns = [
-        "text",
-        "SDG1",
-        "SDG2",
-        "SDG3",
-        "SDG4",
-        "SDG5",
-        "SDG6",
-        "SDG7",
-        "SDG8",
-        "SDG9",
-        "SDG10",
-        "SDG11",
-        "SDG12",
-        "SDG13",
-        "SDG14",
-        "SDG15",
-        "SDG16",
-    ]
-    dataset = dataset[columns]
+    n_targets = len(dataset.columns) - 1
+    columns = ["text"] + [f"SDG{i}" for i in range(1, n_targets + 1)]
 
+    dataset = dataset[columns]
     return dataset
 
 
