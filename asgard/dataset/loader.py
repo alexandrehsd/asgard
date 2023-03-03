@@ -61,24 +61,25 @@ def remove_duplicates(dataset):
     title_counts = text_data["text"].value_counts()
     duplicate_titles = title_counts[title_counts > 1].index.tolist()
 
-    aggregated_rows = []
-    for title in duplicate_titles:
-        title_data = dataset[sdg_columns].loc[dataset["text"] == title, :]
-        sdgs = title_data.sum(axis=0) > 0
-        sdgs = sdgs.astype(int).tolist()
+    if len(duplicate_titles) > 0:
+        aggregated_rows = []
+        for title in duplicate_titles:
+            title_data = dataset[sdg_columns].loc[dataset["text"] == title, :]
+            sdgs = title_data.sum(axis=0) > 0
+            sdgs = sdgs.astype(int).tolist()
 
-        agg_data = [title]
-        agg_data.extend(sdgs)
+            agg_data = [title]
+            agg_data.extend(sdgs)
 
-        aggregated_rows.append(agg_data)
-    deduplicate_records = pd.DataFrame(aggregated_rows, columns=["text"] + sdg_columns)
+            aggregated_rows.append(agg_data)
+        deduplicate_records = pd.DataFrame(aggregated_rows, columns=["text"] + sdg_columns)
 
-    deduplicate_dataset = dataset.loc[~dataset["text"].isin(duplicate_titles)]
-    deduplicate_dataset = pd.concat(
-        [deduplicate_dataset, deduplicate_records], ignore_index=True
-    )
+        deduplicate_dataset = dataset.loc[~dataset["text"].isin(duplicate_titles)]
+        dataset = pd.concat(
+            [deduplicate_dataset, deduplicate_records], ignore_index=True
+        )
 
-    return deduplicate_dataset
+    return dataset
 
 
 def balance_multilabel_dataset(dataset, quantile=0.5, random_state=42):
@@ -92,7 +93,7 @@ def balance_multilabel_dataset(dataset, quantile=0.5, random_state=42):
     Parameters:
     dataset (dataframe): The unbalanced dataset
     quantile (float, optional): the quantile of the counts of labels at which to balance the dataset.
-    If you choose 1, the dataset will remain the same. If you choose 0, than the dataset will be almost
+    If you choose 1, the dataset will remain the same. If you choose 0, then the dataset will be almost
     as balanced as possible. however, you'll probably lose many data. Default value is 0.5 (median).
     random_state (int, optional): the random seed used to sample the dataframe. Default is 42.
 
