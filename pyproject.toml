@@ -7,6 +7,9 @@ test = [
 lint = [
     "ruff>=0.0.245",
 ]
+dev = [
+    "jupyter>=1.0.0",
+]
 
 [project]
 name = "asgard"
