@@ -1,6 +1,7 @@
 import numpy as np
-from asgard.dataset.preprocessing import preprocess_data
+from asgard.dataset.preprocessing import preprocess_data, load_nltk_tools
 
+load_nltk_tools()
 CSV_FILEPATH = "./tests/unit/test_data"
 
 X = np.array(['COVID-19, school closures, and child poverty: a social crisis in the making',
