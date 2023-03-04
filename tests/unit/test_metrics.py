@@ -1,8 +1,15 @@
 import numpy as np
 import random
 from pandas import DataFrame
-from asgard.metrics.metrics import *
-import pytest
+from asgard.metrics.metrics import (
+    compute_binary_metrics,
+    exact_match_ratio,
+    hamming_score,
+    hamming_loss,
+    precision_overall,
+    recall_overall,
+    f1_overall
+)
 
 RANDOM_SEED = 42
 
@@ -12,7 +19,7 @@ random.seed(42)
 y_pred = np.random.randint(2, size=(10, 4))
 y_true = np.random.randint(2, size=(10, 4))
 labels = [f"SDG{i}" for i in range(1, 5)]
-print_multilabel_metrics(y_true, y_pred)
+
 
 def test_compute_binary_metrics():
     binary_metrics = compute_binary_metrics(y_true, y_pred, labels=labels)
