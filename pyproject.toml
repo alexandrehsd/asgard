@@ -133,6 +133,7 @@ omit = [
     "asgard/dataset/main.py",
     "asgard/metrics/__init__.py",
     "asgard/models/__init__.py",
-    "asgard/utils/__init__.py"
+    "asgard/utils/__init__.py",
+    "asgard/utils/data_loader.py"
 ]
 
