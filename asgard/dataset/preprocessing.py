@@ -2,6 +2,10 @@ import string
 import subprocess
 from unicodedata import combining, normalize
 
+import gzip
+from io import BytesIO
+from joblib import load
+
 import numpy as np
 import spacy
 from nltk.stem import SnowballStemmer
@@ -10,15 +14,15 @@ from tqdm import tqdm
 from asgard.utils.monitor import LOGGER
 
 
-def load_nltk_tools():
+def load_spacy_model():
     # download necessary NLP models and tools
     try:
-        _ = spacy.load("en_core_web_lg")
+        _ = spacy.load("en_core_web_sm")
     except OSError:
-        print("The 'en_core_web_lg' model is not installed. Installing now...")
-        subprocess.run(["python", "-m", "spacy", "download", "en_core_web_lg"])
-        _ = spacy.load("en_core_web_lg")
-        print("The 'en_core_web_lg' model has been successfully installed.")
+        print("The 'en_core_web_sm' model is not installed. Installing now...")
+        subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
+        _ = spacy.load("en_core_web_sm")
+        print("The 'en_core_web_sm' model has been successfully installed.")
 
 
 def preprocess_data(X, y, truncation="lemma"):
@@ -64,7 +68,12 @@ def preprocess_data(X, y, truncation="lemma"):
     LOGGER.info(
         "[Preprocessing - 1/2] Tokenizing texts, removing stopwords and punctuation."
     )
-    nlp = spacy.load("en_core_web_lg")
+
+    spacy_model_path = "./asgard/dataset/nlp/en_core_web_sm.joblib.gz"
+    with gzip.open(spacy_model_path, "rb") as spacy_model_file:
+        spacy_buffer = BytesIO(spacy_model_file.read())
+
+    nlp = load(spacy_buffer)
     Z = [
         [
             token.text
