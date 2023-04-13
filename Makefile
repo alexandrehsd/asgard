@@ -23,7 +23,7 @@ environment:
 # install core requirements
 requirements:
 	pip install --upgrade pip
-	pip install "pdm>=2.4.5"
+	pip install "pdm>=2.4.9"
 	pdm install
 
 .PHONY: requirements-lint
