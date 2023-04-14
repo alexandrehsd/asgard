@@ -137,3 +137,7 @@ omit = [
     "asgard/utils/data_loader.py"
 ]
 
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover"
+]

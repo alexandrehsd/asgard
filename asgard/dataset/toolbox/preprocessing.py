@@ -14,7 +14,7 @@ from tqdm import tqdm
 from asgard.utils.monitor import LOGGER
 
 
-def load_spacy_model():
+def load_spacy_model():  # pragma: no cover
     # download necessary NLP models and tools
     try:
         _ = spacy.load("en_core_web_sm")
