@@ -1,5 +1,5 @@
 import numpy as np
-from asgard.dataset.preprocessing import preprocess_data
+from asgard.dataset.toolbox.preprocessing import preprocess_data
 
 CSV_FILEPATH = "./tests/unit/test_data"
 

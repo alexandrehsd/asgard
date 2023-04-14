@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from asgard.dataset.loader import (
+from asgard.dataset.toolbox.loader import (
     load_datasets,
     build_dataset,
     remove_duplicates,

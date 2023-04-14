@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from asgard.dataset.model_selection import split_dataset
+from asgard.dataset.toolbox.model_selection import split_dataset
 
 
 CSV_FILEPATH = "./tests/unit/test_data"

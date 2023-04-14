@@ -1,5 +1,6 @@
 import argparse
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # noqa E402
 
 import numpy as np
 from tensorflow import keras
@@ -13,8 +14,6 @@ from asgard.models.rnn.rnn import build_model, create_text_vectorization_layer
 from asgard.models.rnn.weights import get_class_weight, get_weighted_loss
 from asgard.utils.data_loader import load_datasets
 from asgard.utils.monitor import LOGGER
-
-# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'  # noqa E402
 
 
 # noinspection PyShadowingNames

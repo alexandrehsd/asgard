@@ -1,13 +1,15 @@
 import argparse
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # noqa E402
+
 import pprint
 import random
 
 import numpy as np
 import tensorflow as tf
-from loader import load_dataset
-from model_selection import split_dataset
-from preprocessing import preprocess_data
+from toolbox.loader import load_dataset
+from toolbox.model_selection import split_dataset
+from toolbox.preprocessing import preprocess_data
 
 from asgard.utils.monitor import LOGGER
 

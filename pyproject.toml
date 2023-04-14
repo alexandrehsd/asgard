@@ -130,7 +130,7 @@ source = ["asgard"]
 omit = [
     "asgard/__init__.py",
     "asgard/dataset/__init__.py",
-    "asgard/dataset/main.py",
+    "asgard/dataset/create_dataset.py",
     "asgard/metrics/__init__.py",
     "asgard/models/__init__.py",
     "asgard/utils/__init__.py",
