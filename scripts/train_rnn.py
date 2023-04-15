@@ -4,7 +4,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 import numpy as np
 import wandb
-from wandb.keras import WandbCallback
+import multiprocessing
 from tensorflow import keras
 
 from asgard.metrics.metrics import (
@@ -33,7 +33,7 @@ def train_model(
     output_sequence_length,
     epochs,
     output_path,
-    log=False,
+    log=True,
 ):
     # train preparation
     LOGGER.info("Creating the text vectorization layer.")
@@ -161,11 +161,25 @@ def sweep_train(config_defaults=None):
     )
 
 
-if __name__ == "__main__":
+def sweep_job():
     with open("./asgard/configs/wandb/sweeps/rnn.yaml", "r") as sweep_yaml:
         sweep_config = yaml.safe_load(sweep_yaml)
 
-    sweep_id = wandb.sweep(sweep_config, project="ASGARD")
+    sweep_id = wandb.sweep(sweep_config, project="ASGARD-RNN")
 
-    n_runs = 1
+    n_runs = 15  # each cpu runs 15 times
     wandb.agent(sweep_id, function=sweep_train, count=n_runs)
+
+
+if __name__ == "__main__":
+    n_jobs = multiprocessing.cpu_count()
+
+    # Create a pool of 2 processes
+    pool = multiprocessing.Pool(processes=n_jobs)
+
+    # Start one instance of the script on each CPU
+    results = [pool.apply_async(sweep_job) for i in range(n_jobs)]
+
+    # Wait for all processes to complete
+    pool.close()
+    pool.join()
