@@ -1,8 +1,10 @@
-import argparse
 import os
+import yaml
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 import numpy as np
+import wandb
+from wandb.keras import WandbCallback
 from tensorflow import keras
 
 from asgard.metrics.metrics import (
@@ -106,114 +108,21 @@ def train_model(
     return model, history
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-arg1",
-        "--data_path",
-        type=str,
-        required=True,
-        help="Input path to the tensorflow datasets",
-    )
-    parser.add_argument(
-        "-arg2",
-        "--output_path",
-        type=str,
-        required=True,
-        help="Output path to the model artifact",
-    )
-    # model arguments
-    parser.add_argument(
-        "-arg3",
-        "--class_weight_kind",
-        type=str,
-        required=False,
-        help="Class weighting strategy",
-        default=None,
-    )
-    parser.add_argument(
-        "-arg4",
-        "--optimizer",
-        type=str,
-        required=False,
-        help="Optimizer",
-        default="RMSprop",
-    )
-    parser.add_argument(
-        "-arg5", "--units", type=int, required=False, help="Units", default=70
-    )
-    parser.add_argument(
-        "-arg6",
-        "--dropout",
-        type=float,
-        required=False,
-        help="Dropout rate in the hidden and recurrent layers",
-        default=0.3,
-    )
-    parser.add_argument(
-        "-arg7",
-        "--constraint",
-        type=float,
-        required=False,
-        help="max value used by the MaxNorm weight constraint",
-        default=2.0,
-    )
-    parser.add_argument(
-        "-arg8",
-        "--n_hidden",
-        type=int,
-        required=False,
-        help="number of hidden layers",
-        default=1,
-    )
-    parser.add_argument(
-        "-arg9",
-        "--output_sequence_length",
-        type=int,
-        required=False,
-        help="Standard output sequence length",
-        default=70,
-    )
-    parser.add_argument(
-        "-arg10",
-        "--epochs",
-        type=int,
-        required=False,
-        help="Number of epochs",
-        default=5,
-    )
+def sweep_train(config_defaults=None):
 
-    # learning rate arguments
-    parser.add_argument(
-        "-arg11",
-        "--initial_lr",
-        type=float,
-        required=False,
-        help="Initial learning rate",
-        default=0.01,
-    )
-    parser.add_argument(
-        "-arg12",
-        "--decay_steps",
-        type=int,
-        required=False,
-        help="Amount of steps to the learning rate decay",
-        default=24813,
-    )  # default is the number of steps per epoch
-    parser.add_argument(
-        "-arg13",
-        "--rate",
-        type=float,
-        required=False,
-        help="Rate of the learning rate decay",
-        default=2.0,
-    )
-    args = parser.parse_args()
+    wandb.init(config=config_defaults)
+    wandb.config.architecture_name = "RNN"
+    wandb.config.dataset_name = "SDG-titles"
+
+    LOGGER.info("Loading the datasets.")
+    train_set, valid_set, test_set = load_datasets("storage/datasets/tf")
+
+    config = wandb.config
 
     # learning rate definition
-    initial_learning_rate = args.initial_lr
-    decay_steps = args.decay_steps  # number of steps per epoch
-    rate = args.rate
+    initial_learning_rate = config.learning_rate
+    decay_steps = 24813  # number of steps per epoch
+    rate = 2
     decay_rate = (
         1 / rate
     )  # decrease the learning by a factor of 'rate' every 'decay_steps'
@@ -224,17 +133,15 @@ if __name__ == "__main__":
     learning_rate = lr_scheduler
 
     # weight constraint definition
-    constraint = keras.constraints.MaxNorm(max_value=args.constraint)
-    class_weight_kind = args.class_weight_kind
-    output_sequence_length = args.output_sequence_length
-    optimizer = args.optimizer
-    units = args.units
-    dropout = args.dropout
-    n_hidden = args.n_hidden
-    epochs = args.epochs
-
-    LOGGER.info("Loading the datasets.")
-    train_set, valid_set, test_set = load_datasets(args.data_path)
+    constraint = keras.constraints.MaxNorm(max_value=config.weight_constraint)
+    class_weight_kind = config.class_weight_kind
+    output_sequence_length = config.output_sequence_length
+    optimizer = config.optimizer
+    units = config.units
+    dropout = config.dropout
+    n_hidden = config.n_hidden
+    epochs = config.epochs
+    output_path = "./models"
 
     LOGGER.info("Starting training routine.")
     train_model(
@@ -250,5 +157,15 @@ if __name__ == "__main__":
         n_hidden,
         output_sequence_length,
         epochs,
-        args.output_path,
+        output_path,
     )
+
+
+if __name__ == "__main__":
+    with open("./asgard/configs/wandb/sweeps/rnn.yaml", "r") as sweep_yaml:
+        sweep_config = yaml.safe_load(sweep_yaml)
+
+    sweep_id = wandb.sweep(sweep_config, project="ASGARD")
+
+    n_runs = 1
+    wandb.agent(sweep_id, function=sweep_train, count=n_runs)
