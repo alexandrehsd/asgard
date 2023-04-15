@@ -36,6 +36,11 @@ requirements-lint:
 requirements-test:
 	pdm install -G test
 
+.PHONY: datasets
+# pull datasets from dvc google-drive remote storage
+datasets:
+	@pdm run dvc pull --remote gdrive-remote-asgard-datasets
+
 .PHONY: jupyter
 # start a jupyter notebook server
 jupyter:
