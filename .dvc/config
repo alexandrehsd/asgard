@@ -1,0 +1,5 @@
+[core]
+    remote = gdrive-remote-asgard-datasets
+['remote "gdrive-remote-asgard-datasets"']
+    url = gdrive://1eT9eQ7vBDYgWVpSbjS52Lmk4bD4bvTdY
+    gdrive_use_service_account = true
