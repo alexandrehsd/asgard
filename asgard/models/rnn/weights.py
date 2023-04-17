@@ -37,7 +37,7 @@ def get_weighted_loss(weights):
 
 
 def get_class_weight(train_set, class_weight_kind="balanced"):
-    if class_weight_kind is None:
+    if (class_weight_kind is None) or (class_weight_kind == "None"):
         class_weights = None
 
     elif class_weight_kind == "balanced":

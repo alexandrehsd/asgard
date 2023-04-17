@@ -4,7 +4,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 import numpy as np
 import wandb
-import multiprocessing
 from tensorflow import keras
 
 from asgard.metrics.metrics import (
@@ -46,7 +45,7 @@ def train_model(
     class_weights = get_class_weight(train_set, class_weight_kind)
 
     loss = None  # initialize variable
-    if class_weight_kind is None:
+    if (class_weight_kind is None) or (class_weight_kind == "None"):
         loss = "binary_crossentropy"
     elif (class_weight_kind == "balanced") or (class_weight_kind == "two-to-one"):
         loss = get_weighted_loss(class_weights)
@@ -133,7 +132,12 @@ def sweep_train(config_defaults=None):
     learning_rate = lr_scheduler
 
     # weight constraint definition
-    constraint = keras.constraints.MaxNorm(max_value=config.weight_constraint)
+    if (config.weight_constraint is None) or (config.weight_constraint == "None"):
+        weight_constraint = None
+    else:
+        weight_constraint = config.weight_constraint
+
+    constraint = keras.constraints.MaxNorm(max_value=weight_constraint)
     class_weight_kind = config.class_weight_kind
     output_sequence_length = config.output_sequence_length
     optimizer = config.optimizer
@@ -161,25 +165,11 @@ def sweep_train(config_defaults=None):
     )
 
 
-def sweep_job():
+if __name__ == "__main__":
     with open("./asgard/configs/wandb/sweeps/rnn.yaml", "r") as sweep_yaml:
         sweep_config = yaml.safe_load(sweep_yaml)
 
     sweep_id = wandb.sweep(sweep_config, project="ASGARD-RNN")
 
-    n_runs = 15  # each cpu runs 15 times
+    n_runs = 100
     wandb.agent(sweep_id, function=sweep_train, count=n_runs)
-
-
-if __name__ == "__main__":
-    n_jobs = multiprocessing.cpu_count()
-
-    # Create a pool of 2 processes
-    pool = multiprocessing.Pool(processes=n_jobs)
-
-    # Start one instance of the script on each CPU
-    results = [pool.apply_async(sweep_job) for i in range(n_jobs)]
-
-    # Wait for all processes to complete
-    pool.close()
-    pool.join()
