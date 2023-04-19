@@ -1,5 +1,7 @@
 # rnn.yaml
+program: scripts/train_rnn.py
 name: "ASGARD-RNN"
+project: "ASGARD-RNN"
 method: bayes
 metric:
   name: accuracy
@@ -10,7 +12,7 @@ parameters:
   rate:
     values: [1, 1.5, 2, 2.5]
   weight_constraint:
-    values: ["None", 1., 3., 5.]
+    values: [-1, 1., 3., 5.]  # -1 represents None
   optimizer:
     values: ["Adam", "RMSprop", "Nadam"]
   dropout:
@@ -25,3 +27,7 @@ parameters:
     values: ["balanced", "two-to-one", "None"]
   n_hidden:
     values: [1, 2]
+command:
+  - python
+  - scripts/train_rnn.py
+  - ${args}
