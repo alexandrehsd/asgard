@@ -41,7 +41,7 @@ def build_model(
     embed_size = units
 
     # same droupout and constraint rate for the recurrent states
-    recurrent_dropout = 0  # must be set to 0 when using GPU
+    recurrent_dropout = dropout  # must be set to 0 when using GPU
     recurrent_constraint = constraint
 
     # instantiate the model and add text vectorization and embedding layer
