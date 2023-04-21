@@ -5,6 +5,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import numpy as np
 import wandb
 from tensorflow import keras
+import tensorflow as tf
+# tf.config.run_functions_eagerly(True)
 
 from asgard.metrics.metrics import (
     compute_binary_metrics,
@@ -78,7 +80,7 @@ def train_model(
 
     tensorboard_cb = keras.callbacks.TensorBoard(run_logdir)
     early_stopping_cb = keras.callbacks.EarlyStopping(
-        monitor="val_accuracy", mode="max", patience=2, restore_best_weights=True
+        monitor="val_hamming_score", mode="max", min_delta=0.002, restore_best_weights=True
     )
 
     callbacks = [tensorboard_cb, early_stopping_cb]

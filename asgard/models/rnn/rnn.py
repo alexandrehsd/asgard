@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
+from asgard.metrics.metrics import HammingScoreMetric
 
 
 def create_text_vectorization_layer(train_set, output_sequence_length):
@@ -82,5 +83,5 @@ def build_model(
     # add output layer
     model.add(keras.layers.Dense(n_outputs, activation="sigmoid"))
 
-    model.compile(loss=loss, optimizer=optimizer, metrics=["accuracy"])
+    model.compile(loss=loss, optimizer=optimizer, metrics=[HammingScoreMetric()])
     return model
