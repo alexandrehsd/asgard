@@ -2,6 +2,8 @@ from pprint import pprint
 
 import numpy as np
 import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
 from sklearn.metrics import (  # isort:skip
     accuracy_score,
     f1_score,
@@ -103,3 +105,39 @@ def print_multilabel_metrics(y_true, y_pred):
             "Overall F1-Score": np.round(f1, 4),
         }
     )
+
+
+class HammingScoreMetric(keras.metrics.Metric):
+    def __init__(self, name="hamming_score", threshold=0.5, **kwargs):
+        super().__init__(name=name, **kwargs)
+        self.threshold = threshold
+        self.hit_rate = self.add_weight("hit_rate", initializer="zeros")
+        self.count = self.add_weight("count", initializer="zeros")
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        hit_rate = self._hamming_score(y_true, y_pred)
+
+        self.hit_rate.assign_add(tf.reduce_sum(hit_rate))
+        self.count.assign_add(tf.cast(tf.size(y_true) / 16, tf.float32))
+
+    def result(self):
+        return self.hit_rate / self.count
+
+    def get_config(self):
+        base_config = super().get_config()
+        return {**base_config, "threshold": self.threshold}
+
+    def _hamming_score(self, y_true, y_pred):
+        # convert probabilities into binary labels
+        y_pred = tf.where(y_pred >= self.threshold, 1, 0)
+
+        # cast binary labels to bool
+        y_true = tf.cast(y_true, tf.bool)
+        y_pred = tf.cast(y_pred, tf.bool)
+
+        # perform operations to compute the hamming score
+        hits = tf.cast(tf.logical_and(y_true, y_pred), dtype=tf.float32)
+        positives = tf.cast(tf.logical_or(y_true, y_pred), dtype=tf.float32)
+        hit_rate = tf.reduce_sum(hits, axis=1) / tf.reduce_sum(positives, axis=1)
+
+        return hit_rate

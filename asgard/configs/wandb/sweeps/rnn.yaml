@@ -4,7 +4,7 @@ name: "ASGARD-RNN"
 project: "ASGARD-RNN"
 method: bayes
 metric:
-  name: accuracy
+  name: Hamming Score
   goal: maximize
 parameters:
   learning_rate:
