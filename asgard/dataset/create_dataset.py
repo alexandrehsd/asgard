@@ -103,6 +103,13 @@ def main():
         help="Tensorflow batch size",
         default=32,
     )
+    parser.add_argument(
+        "-arg9",
+        "--raw",
+        action="store_true",
+        required=False,
+        help="Boolean variable to determine whether or not preprocess the dataset"
+    )
 
     args = parser.parse_args()
     random_state = args.seed
@@ -131,16 +138,17 @@ def main():
     X_test, y_test = data_split["test"]
     labels = data_split["labels"]
 
-    truncation = args.text_truncation
+    if not args.raw:
+        truncation = args.text_truncation
 
-    LOGGER.info("Preprocessing the training set titles.")
-    X_train, y_train = preprocess_data(X_train, y_train, truncation=truncation)
+        LOGGER.info("Preprocessing the training set titles.")
+        X_train, y_train = preprocess_data(X_train, y_train, truncation=truncation)
 
-    LOGGER.info("Preprocessing the validation set titles.")
-    X_valid, y_valid = preprocess_data(X_valid, y_valid, truncation=truncation)
+        LOGGER.info("Preprocessing the validation set titles.")
+        X_valid, y_valid = preprocess_data(X_valid, y_valid, truncation=truncation)
 
-    LOGGER.info("Preprocessing the test set titles.")
-    X_test, y_test = preprocess_data(X_test, y_test, truncation=truncation)
+        LOGGER.info("Preprocessing the test set titles.")
+        X_test, y_test = preprocess_data(X_test, y_test, truncation=truncation)
 
     log_label_counts(y_train, y_valid, y_test, labels)
 
@@ -164,9 +172,9 @@ def main():
 
     # stores tf datasets
     LOGGER.info("Storing the output datasets.")
-    tf.data.experimental.save(train_set, os.path.join(output_path, "train_set"))
-    tf.data.experimental.save(valid_set, os.path.join(output_path, "valid_set"))
-    tf.data.experimental.save(test_set, os.path.join(output_path, "test_set"))
+    tf.data.Dataset.save(train_set, os.path.join(output_path, "train_set"))
+    tf.data.Dataset.save(valid_set, os.path.join(output_path, "valid_set"))
+    tf.data.Dataset.save(test_set, os.path.join(output_path, "test_set"))
 
 
 if __name__ == "__main__":
