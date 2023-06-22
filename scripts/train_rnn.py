@@ -5,16 +5,15 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import numpy as np
 import wandb
 from tensorflow import keras
-import tensorflow as tf
 # tf.config.run_functions_eagerly(True)
 
 from asgard.metrics.metrics import (
     compute_binary_metrics,
     print_multilabel_metrics,
 )
-from asgard.models.rnn.logging import get_run_logdir, log_to_wandb
+from asgard.utils.logging import get_run_logdir, log_to_wandb
 from asgard.models.rnn.rnn import build_model, create_text_vectorization_layer
-from asgard.models.rnn.weights import get_class_weight, get_weighted_loss
+from asgard.utils.weights import get_class_weight, get_weighted_loss
 from asgard.utils.data_loader import load_datasets
 from asgard.utils.monitor import LOGGER
 
