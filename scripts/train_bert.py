@@ -34,7 +34,7 @@ def train_model(
         log=True,
 ):
     # bert model
-    bert_model_name = "bert_en_uncased_L-12_H-768_A-12"
+    bert_model_name = "bert_en_uncased_L-12_H-768_A-12"  # noqa: F841
     tfhub_encoder_handler = 'https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/3'
     tfhub_preprocess_handler = 'https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3'
 

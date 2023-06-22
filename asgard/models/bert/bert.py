@@ -1,4 +1,4 @@
-import tensorflow_text as text
+import tensorflow_text as text  # noqa: F401
 import tensorflow as tf
 import tensorflow_hub as hub
 
