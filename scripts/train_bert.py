@@ -4,6 +4,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 import numpy as np
 import tensorflow as tf
+import wandb
 from official.nlp import optimization  # to create AdamW optimizer
 from tensorflow import keras
 from asgard.metrics.metrics import HammingScoreMetric
@@ -34,9 +35,15 @@ def train_model(
         log=True,
 ):
     # bert model
-    bert_model_name = "bert_en_uncased_L-12_H-768_A-12"  # noqa: F841
-    tfhub_encoder_handler = 'https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/3'
-    tfhub_preprocess_handler = 'https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3'
+    # bert_model_name = "bert_en_uncased_L-12_H-768_A-12"  # noqa: F841
+    # tfhub_encoder_handler = 'https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/3'
+    # tfhub_preprocess_handler = 'https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3'
+    
+    # distilbert
+    # https://tfhub.dev/jeongukjae/distilbert_en_uncased_L-6_H-768_A-12/1
+    bert_model_name = "distilbert_en_uncased_L-6_H-768_A-12"
+    tfhub_encoder_handler = "https://tfhub.dev/jeongukjae/distilbert_en_uncased_L-6_H-768_A-12/1"
+    tfhub_preprocess_handler = "https://tfhub.dev/jeongukjae/distilbert_en_uncased_preprocess/2"
 
     # Loss function
     LOGGER.info("Computing weights for the loss function.")
@@ -68,7 +75,7 @@ def train_model(
 
     tensorboard_cb = keras.callbacks.TensorBoard(run_logdir)
     early_stopping_cb = keras.callbacks.EarlyStopping(
-        monitor="val_hamming_score", mode="max", min_delta=0.002, restore_best_weights=True
+        monitor="val_accuracy", mode="max", min_delta=0.002, restore_best_weights=True
     )
 
     callbacks = [tensorboard_cb, early_stopping_cb]
@@ -98,7 +105,7 @@ def train_model(
 
 
 if __name__ == "__main__":
-    # wandb.init()
+    wandb.init()
 
     parser = argparse.ArgumentParser()
     # model arguments
@@ -135,12 +142,20 @@ if __name__ == "__main__":
         help="Initial learning rate",
         default=3e-5,
     )
+    
+    LOGGER.info("Loading the datasets.")
+    train_set, valid_set, test_set = load_datasets("storage/datasets/tf_raw")
 
     args = parser.parse_args()
 
     # Define number of epochs
     epochs = args.epochs
-    steps_per_epoch = 24813
+    
+    num_batches = 0 
+    for _ in iter(train_set):
+        num_batches += 1
+    
+    steps_per_epoch = num_batches
 
     # Define optimizer
     num_train_steps = steps_per_epoch * epochs
@@ -156,9 +171,6 @@ if __name__ == "__main__":
 
     output_path = "./models/bert"
 
-    LOGGER.info("Loading the datasets.")
-    train_set, valid_set, test_set = load_datasets("storage/datasets/tf_raw")
-
     LOGGER.info("Starting training routine.")
     train_model(
         train_set,
@@ -169,5 +181,5 @@ if __name__ == "__main__":
         dropout,
         epochs,
         output_path,
-        log=False,
+        log=True,
     )

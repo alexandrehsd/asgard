@@ -193,7 +193,15 @@ if __name__ == "__main__":
 
     # learning rate definition
     initial_learning_rate = args.learning_rate
-    decay_steps = 24813  # number of steps per epoch
+    
+    LOGGER.info("Loading the datasets.")
+    train_set, valid_set, test_set = load_datasets("storage/datasets/tf")
+    
+    num_batches = 0 
+    for _ in iter(train_set):
+        num_batches += 1
+    
+    decay_steps = num_batches  # number of steps per epoch
     rate = args.rate
     decay_rate = (
         1 / rate
@@ -218,10 +226,7 @@ if __name__ == "__main__":
     dropout = args.dropout
     n_hidden = args.n_hidden
     epochs = args.epochs
-    output_path = "./models"
-
-    LOGGER.info("Loading the datasets.")
-    train_set, valid_set, test_set = load_datasets("storage/datasets/tf")
+    output_path = "./models/rnn"
 
     LOGGER.info("Starting training routine.")
     train_model(
