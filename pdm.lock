@@ -2583,8 +2583,10 @@ requires_python = ">=3.7"
 summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
-lock_version = "4.1"
-content_hash = "sha256:c2e94563ed2451e31e3ecf3ac1ebf60a25afc5d9b2406f595e275fc01f78a568"
+lock_version = "4.2"
+cross_platform = true
+groups = ["default", "dev", "lint", "test"]
+content_hash = "sha256:2c8f187e698caa69e279e919f1fe451831e3565b5b01732aba5cf2df85794f67"
 
 [metadata.files]
 "absl-py 1.4.0" = [
