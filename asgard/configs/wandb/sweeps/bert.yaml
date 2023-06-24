@@ -1,0 +1,21 @@
+# rnn.yaml
+program: scripts/train_bert.py
+name: "ASGARD-BERT"
+project: "ASGARD-BERT"
+method: bayes
+metric:
+  name: Hamming Score
+  goal: maximize
+parameters:
+  class_weight_kind:
+    values: ["two-to-one"]
+  dropout:
+    values: [0.1, 0.15, 0.2]
+  epochs:
+    values: [4, 5]
+  learning_rate:
+    values: [1e-5, 3e-5, 6e-5, 1e-4]
+command:
+  - python
+  - scripts/train_bert.py
+  - ${args}
