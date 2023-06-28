@@ -7,11 +7,12 @@ import wandb
 from tensorflow import keras
 # tf.config.run_functions_eagerly(True)
 
+from asgard.callbacks.callbacks import EarlyStoppingHammingScore
 from asgard.metrics.metrics import (
     compute_binary_metrics,
     print_multilabel_metrics,
 )
-from asgard.utils.logging import get_run_logdir, log_to_wandb
+from asgard.utils.logging import get_run_id, log_to_wandb
 from asgard.models.rnn.rnn import build_model, create_text_vectorization_layer
 from asgard.utils.weights import get_class_weight, get_weighted_loss
 from asgard.utils.data_loader import load_datasets
@@ -73,16 +74,14 @@ def train_model(
     )
 
     # Define callbacks
-    root_logdir = os.path.join(output_path, "logs")
-    run_logdir = get_run_logdir(root_logdir)
-    model_dir = os.path.join(output_path, "artifact")
+    run_id = get_run_id()
+    run_logdir = os.path.join(output_path, "rnn", "logs", run_id)
 
     tensorboard_cb = keras.callbacks.TensorBoard(run_logdir)
-    early_stopping_cb = keras.callbacks.EarlyStopping(
-        monitor="val_hamming_score", mode="max", min_delta=0.002, restore_best_weights=True
-    )
-
-    callbacks = [tensorboard_cb, early_stopping_cb]
+    early_stopping_cb = EarlyStoppingHammingScore(monitor="val_hamming_score", patience=0, min_delta=0.002)
+    wandb_cb = wandb.keras.WandbCallback(monitor="val_hamming_score", mode="max")
+    
+    callbacks = [tensorboard_cb, early_stopping_cb, wandb_cb]
 
     LOGGER.info("Fitting the model.")
     history = model.fit(
@@ -92,6 +91,7 @@ def train_model(
     # Logging metrics
     if log:
         log_to_wandb(model, valid_set, test_set)
+        wandb.save(os.path.join(wandb.run.dir, "model.h5"))
     else:
         y_pred = (model.predict(test_set) > 0.5) + 0
         y_true = np.concatenate([y.numpy() for X, y in test_set])
@@ -101,9 +101,6 @@ def train_model(
 
         print(binary_metrics)
         print_multilabel_metrics(y_true, y_pred)
-
-    # save model
-    model.save(model_dir)
 
     return model, history
 
@@ -226,7 +223,7 @@ if __name__ == "__main__":
     dropout = args.dropout
     n_hidden = args.n_hidden
     epochs = args.epochs
-    output_path = "./models/rnn"
+    output_path = "./training_runs"
 
     LOGGER.info("Starting training routine.")
     train_model(
