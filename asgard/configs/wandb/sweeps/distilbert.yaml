@@ -1,0 +1,24 @@
+# distilbert.yaml
+program: scripts/train_bert.py
+name: "ASGARD-DistilBERT"
+project: "ASGARD-DistilBERT"
+method: random
+metric:
+  name: Hamming Score
+  goal: maximize
+parameters:
+  model_architecture:
+    values: ["distilbert"]
+  class_weight_kind:
+    values: ["balanced", "two-to-one"]
+    probabilities: [0.4, 0.6]
+  dropout:
+    values: [0.1, 0.15, 0.2]
+  epochs:
+    values: [4, 5]
+  learning_rate:
+    values: [1e-5, 3e-5, 6e-5, 1e-4]
+command:
+  - python
+  - scripts/train_bert.py
+  - ${args}
