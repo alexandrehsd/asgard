@@ -1,14 +1,17 @@
-# rnn.yaml
+# bert.yaml
 program: scripts/train_bert.py
 name: "ASGARD-BERT"
 project: "ASGARD-BERT"
-method: bayes
+method: random
 metric:
   name: Hamming Score
   goal: maximize
 parameters:
+  model_architecture:
+    values: ["bert"]
   class_weight_kind:
-    values: ["two-to-one"]
+    values: ["balanced", "two-to-one"]
+    probabilities: [0.3, 0.7]
   dropout:
     values: [0.1, 0.15, 0.2]
   epochs:
