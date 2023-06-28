@@ -15,9 +15,9 @@ from asgard.metrics.metrics import (  # isort:skip
 
 
 # define folder for artifact persistence
-def get_run_logdir(root_logdir):
+def get_run_id():
     run_id = time.strftime("run_%Y_%m_%d-%H_%M_%S")
-    return os.path.join(root_logdir, run_id)
+    return run_id
 
 
 # To run this function, you must log in to your WandB account
