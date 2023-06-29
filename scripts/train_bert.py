@@ -1,28 +1,32 @@
 import argparse
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-
+from comet_ml import Experiment
 import numpy as np
 import tensorflow as tf
 import wandb
+
+from codecarbon import EmissionsTracker
 from official.nlp import optimization  # to create AdamW optimizer
 from tensorflow import keras
+from asgard.callbacks.callbacks import EarlyStoppingHammingScore
 from asgard.metrics.metrics import HammingScoreMetric
-
 from asgard.metrics.metrics import (
     compute_binary_metrics,
     print_multilabel_metrics,
 )
-from asgard.utils.logging import get_run_logdir, log_to_wandb
+from asgard.utils.logging import get_run_id, log_to_wandb
 from asgard.models.bert.bert import build_model
 from asgard.utils.weights import get_class_weight, get_weighted_loss
 from asgard.utils.data_loader import load_datasets
 from asgard.utils.monitor import LOGGER
 
+from absl import logging
+logging.set_verbosity(logging.ERROR)
+
 tf.get_logger().setLevel('ERROR')
 
 
-# noinspection PyShadowingNames
 def train_model(
         train_set,
         valid_set,
@@ -32,18 +36,21 @@ def train_model(
         dropout,
         epochs,
         output_path,
+        model_architecture,
         log=True,
 ):
     # bert model
-    # bert_model_name = "bert_en_uncased_L-12_H-768_A-12"  # noqa: F841
-    # tfhub_encoder_handler = 'https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/3'
-    # tfhub_preprocess_handler = 'https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3'
-    
+    if model_architecture == "bert":
+        # bert_model_name = "bert_en_uncased_L-12_H-768_A-12"  # noqa: F841
+        tfhub_encoder_handler = 'https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/3'
+        tfhub_preprocess_handler = 'https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3'
+        
     # distilbert
-    # https://tfhub.dev/jeongukjae/distilbert_en_uncased_L-6_H-768_A-12/1
-    bert_model_name = "distilbert_en_uncased_L-6_H-768_A-12"
-    tfhub_encoder_handler = "https://tfhub.dev/jeongukjae/distilbert_en_uncased_L-6_H-768_A-12/1"
-    tfhub_preprocess_handler = "https://tfhub.dev/jeongukjae/distilbert_en_uncased_preprocess/2"
+    if model_architecture == "distilbert":
+        # https://tfhub.dev/jeongukjae/distilbert_en_uncased_L-6_H-768_A-12/1
+        # bert_model_name = "distilbert_en_uncased_L-6_H-768_A-12"
+        tfhub_encoder_handler = "https://tfhub.dev/jeongukjae/distilbert_en_uncased_L-6_H-768_A-12/1"
+        tfhub_preprocess_handler = "https://tfhub.dev/jeongukjae/distilbert_en_uncased_preprocess/2"
 
     # Loss function
     LOGGER.info("Computing weights for the loss function.")
@@ -56,6 +63,9 @@ def train_model(
         loss = get_weighted_loss(class_weights)
 
     LOGGER.info("Building model.")
+    emissions_tracker = EmissionsTracker(log_level="critical")
+    emissions_tracker.start()
+    
     n_outputs = 16
     metrics = [HammingScoreMetric()]
     model = build_model(
@@ -69,25 +79,27 @@ def train_model(
     )
 
     # Define callbacks
-    root_logdir = os.path.join(output_path, "logs")
-    run_logdir = get_run_logdir(root_logdir)
-    model_dir = os.path.join(output_path, "artifact")
+    run_id = get_run_id()
+    run_logdir = os.path.join(output_path, model_architecture, "logs", run_id)
 
     tensorboard_cb = keras.callbacks.TensorBoard(run_logdir)
-    early_stopping_cb = keras.callbacks.EarlyStopping(
-        monitor="val_accuracy", mode="max", min_delta=0.002, restore_best_weights=True
-    )
+    early_stopping_cb = EarlyStoppingHammingScore(monitor="val_hamming_score", patience=1, min_delta=0.002)
+    wandb_cb = wandb.keras.WandbCallback(monitor="val_hamming_score", mode="max")
 
-    callbacks = [tensorboard_cb, early_stopping_cb]
+    callbacks = [tensorboard_cb, early_stopping_cb, wandb_cb]
 
     LOGGER.info("Fitting the model.")
+    
     history = model.fit(
         train_set, validation_data=valid_set, epochs=epochs, callbacks=callbacks
     )
+    
+    emissions_tracker.stop()
 
     # Logging metrics
     if log:
-        log_to_wandb(model, valid_set, test_set)
+        log_to_wandb(model, valid_set, test_set, emissions_tracker)
+        wandb.save(os.path.join(wandb.run.dir, "model"))
     else:
         y_pred = (model.predict(test_set) > 0.5) + 0
         y_true = np.concatenate([y.numpy() for X, y in test_set])
@@ -97,9 +109,6 @@ def train_model(
 
         print(binary_metrics)
         print_multilabel_metrics(y_true, y_pred)
-
-    # save model
-    model.save(model_dir)
 
     return model, history
 
@@ -142,6 +151,14 @@ if __name__ == "__main__":
         help="Initial learning rate",
         default=3e-5,
     )
+    parser.add_argument(
+        "-arg5",
+        "--model_architecture",
+        type=str,
+        required=True,
+        help="Model Architecture",
+        default="bert",
+    )
     
     LOGGER.info("Loading the datasets.")
     train_set, valid_set, test_set = load_datasets("storage/datasets/tf_raw")
@@ -168,8 +185,30 @@ if __name__ == "__main__":
 
     class_weight_kind = args.class_weight_kind
     dropout = args.dropout
+    
+    model_architecture = args.model_architecture
+    output_path = "./training_runs"
+    
+    # # Define the size of the subsample
+    # subsample_size = 10
 
-    output_path = "./models/bert"
+    # # Shuffle the dataset
+    # train_shuffled_dataset = train_set.shuffle(buffer_size=10)
+
+    # # Take a subsample from the shuffled dataset
+    # train_subsample = train_shuffled_dataset.take(subsample_size)
+    
+    # # Shuffle the dataset
+    # valid_shuffled_dataset = valid_set.shuffle(buffer_size=10)
+
+    # # Take a subsample from the shuffled dataset
+    # valid_subsample = valid_shuffled_dataset.take(subsample_size)
+    
+    # # Shuffle the dataset
+    # test_shuffled_dataset = test_set.shuffle(buffer_size=10)
+
+    # # Take a subsample from the shuffled dataset
+    # test_subsample = test_shuffled_dataset.take(subsample_size)
 
     LOGGER.info("Starting training routine.")
     train_model(
@@ -181,5 +220,6 @@ if __name__ == "__main__":
         dropout,
         epochs,
         output_path,
+        model_architecture,
         log=True,
     )

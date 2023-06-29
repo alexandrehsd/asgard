@@ -21,7 +21,7 @@ def get_run_id():
 
 
 # To run this function, you must log in to your WandB account
-def log_to_wandb(model, valid_set, test_set):
+def log_to_wandb(model, valid_set, test_set, emissions_tracker):
     bce, accuracy = model.evaluate(test_set)
     valid_bce, valid_accuracy = model.evaluate(valid_set)
 
@@ -48,5 +48,12 @@ def log_to_wandb(model, valid_set, test_set):
             "Overall Precision": precision,
             "Overall Recall": recall,
             "Overall F1": f1,
+            "Number of Parameters": model.count_params(),
+            "Energy Consumed": emissions_tracker.final_emissions_data.energy_consumed,
+            "Energy RAM": emissions_tracker.final_emissions_data.ram_energy,
+            "Energy GPU": emissions_tracker.final_emissions_data.gpu_energy,
+            "Energy CPU": emissions_tracker.final_emissions_data.cpu_energy,
+            "Co2 Emissions": emissions_tracker.final_emissions_data.emissions,
+            "Co2 Emissions Rate": emissions_tracker.final_emissions_data.emissions_rate
         }
     )
