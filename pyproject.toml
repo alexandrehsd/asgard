@@ -10,6 +10,11 @@ lint = [
 dev = [
     "jupyter>=1.0.0",
 ]
+devops = [
+    "streamlit>=1.22.0",
+    "fastapi>=0.98.0",
+    "uvicorn>=0.22.0",
+]
 
 [project]
 name = "asgard"
@@ -70,6 +75,7 @@ dependencies = [
     "wandb>=0.14.2",
     "tensorflow-text>=2.11.0",
     "tf-models-official>=2.11.6",
+    "codecarbon>=2.2.4"
 ]
 requires-python = "==3.9.13"
 license = {text = "MIT"}
