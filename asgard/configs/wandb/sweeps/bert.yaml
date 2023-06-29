@@ -10,8 +10,8 @@ parameters:
   model_architecture:
     values: ["bert"]
   class_weight_kind:
-    values: ["balanced", "two-to-one"]
-    probabilities: [0.3, 0.7]
+    values: ["balanced", "two-to-one", "None"]
+    probabilities: [0.3, 0.6, 0.1]
   dropout:
     values: [0.1, 0.15, 0.2]
   epochs:
