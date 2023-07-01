@@ -39,6 +39,16 @@ requirements-lint:
 requirements-test:
 	pdm install -G test
 
+.PHONY: requirements-api
+requirements-api:
+# install all requirements for the api this is going 
+	pdm install -G api
+
+.PHONY: requirements-app
+requirements-app:
+# install all requirements for the app
+	pdm install -G app
+
 .PHONY: datasets
 # pull datasets from dvc google-drive remote storage
 datasets:
@@ -57,3 +67,11 @@ code-check:
 .PHONY: tests
 tests:
 	@pdm run pytest
+
+.PHONY: application
+application:
+	@streamlit run app/app.py
+
+.PHONY: api
+api:
+	python api/api.py
