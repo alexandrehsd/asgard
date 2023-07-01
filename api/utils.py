@@ -3,9 +3,8 @@ import numpy as np
 import wandb
 
 import tensorflow as tf
-import tensorflow_hub as hub
-import tensorflow_text as text
-from tensorflow import keras
+import tensorflow_hub as hub  # noqa: F401
+import tensorflow_text as text  # noqa: F401
 from official.nlp import optimization
 
 from asgard.metrics.metrics import HammingScoreMetric

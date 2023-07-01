@@ -142,6 +142,7 @@ max-complexity = 10
 "create_dataset.py" = ["E402"]
 "train_rnn.py" = ["E402"]
 "train_bert.py" = ["E402"]
+"./api/api.py" = ["E402"]
 
 # pytest configs
 [tool.pytest.ini_options]
