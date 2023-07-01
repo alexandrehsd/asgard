@@ -1,0 +1,41 @@
+version: '3.9'
+
+services:
+  api:
+    container_name: api
+    image: api:v1
+    build: 
+      context: .
+      dockerfile: ./api/Dockerfile
+    networks:
+      asgard:
+        ipv4_address: 172.20.0.3
+    restart: always
+    ports:
+      - "8000:8000"
+
+  app:
+    container_name: app
+    image: app:v1
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+    networks:
+      asgard:
+        ipv4_address: 172.20.0.4
+    environment:
+      API_HOST: '172.20.0.3'
+    restart: always
+    depends_on:
+      - "api"
+    ports:
+      - "8501:8501"
+
+networks:
+  asgard:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/24
+          gateway: 172.20.0.1
