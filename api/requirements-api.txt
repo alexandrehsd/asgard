@@ -1,0 +1,9 @@
+tensorflow>=2.11.0
+fastapi>=0.98.0
+wandb>=0.15.4
+numpy>=1.24.2
+tensorflow-hub>=0.13.0
+tensorflow-text>=2.11.0
+tf-models-official>=2.11.6
+pydantic>=1.10.9
+uvicorn>=0.22.0
