@@ -4,6 +4,83 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 
+
+st.markdown("""
+<style>
+.small-font {
+    font-size:12px !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+SDG = {
+    1: {"name": "SDG 1",
+        "title": "No Poverty",
+        "description": "End poverty in all its forms everywhere",
+        "details": "https://www.undp.org/sustainable-development-goals/no-poverty"},
+    2: {"name": "SDG 2",
+        "title": "Zero Hunger",
+        "description": "End hunger, achieve food security and improved nutrition, and promote sustainable agriculture",
+        "details": "https://www.undp.org/sustainable-development-goals/zero-hunger"},
+    3: {"name": "SDG 3",
+        "title": "Good Health and Well-Being",
+        "description": "Ensure healthy lives and promote well-being for all at all ages",
+        "details": "https://www.undp.org/sustainable-development-goals/good-health"},
+    4: {"name": "SDG 4",
+        "title": "Quality Education",
+        "description": "Ensure inclusive and equitable quality education and promote lifelong learning opportunities for all",
+        "details": "https://www.undp.org/sustainable-development-goals/quality-education"},
+    5: {"name": "SDG 5",
+        "title": "Gender Equality",
+        "description": "Achieve gender equality and empower all women and girls",
+        "details": "https://www.undp.org/sustainable-development-goals/gender-equality"},
+    6: {"name": "SDG 6",
+        "title": "Clean Water and Sanitation",
+        "description": "Ensure availability and sustainable management of water and sanitation for all",
+        "details": "https://www.undp.org/sustainable-development-goals/clean-water-and-sanitation"},
+    7: {"name": "SDG 7",
+        "title": "Affordable and Clean Energy",
+        "description": "Ensure access to affordable, reliable, sustainable and modern energy for all",
+        "details": "https://www.undp.org/sustainable-development-goals/affordable-and-clean-energy"},
+    8: {"name": "SDG 8",
+        "title": "Decent Work and Economic Growth",
+        "description": "Promote sustained, inclusive and sustainable economic growth, full and productive employment and decent work for all",
+        "details": "https://www.undp.org/sustainable-development-goals/decent-work-and-economic-growth"},
+    9: {"name": "SDG 9",
+        "title": "Industry, Innovation and Infrastructure",
+        "description": "Build resilient infrastructure, promote inclusive and sustainable industrialization, and foster innovation",
+        "details": "https://www.undp.org/sustainable-development-goals/industry-innovation-and-infrastructure"},
+    10: {"name": "SDG 10",
+         "title": "Reduced Inequalities",
+         "description": "Reduce income inequality within and among countries",
+         "details": "https://www.undp.org/sustainable-development-goals/reduced-inequalities"},
+    11: {"name": "SDG 11",
+         "title": "Sustainable Cities and Communities",
+         "description": "Make cities and human settlements inclusive, safe, resilient, and sustainable",
+         "details": "https://www.undp.org/sustainable-development-goals/sustainable-cities-and-communities"},
+    12: {"name": "SDG 12",
+         "title": "Responsible Consumption and Production",
+         "description": "Ensure sustainable consumption and production patterns",
+         "details": "https://www.undp.org/sustainable-development-goals/responsible-consumption-and-production"},
+    13: {"name": "SDG 13",
+         "title": "Climate Action",
+         "description": "Take urgent action to combat climate change and its impacts by regulating emissions and promoting developments in renewable energy",
+         "details": "https://www.undp.org/sustainable-development-goals/climate-action"},
+    14: {"name": "SDG 14",
+         "title": "Life Below Water",
+         "description": "Conserve and sustainably use the oceans, seas and marine resources for sustainable development",
+         "details": "https://www.undp.org/sustainable-development-goals/below-water"},
+    15: {"name": "SDG 15",
+         "title": "Life on Land",
+         "description": "Protect, restore and promote sustainable use of terrestrial ecosystems, sustainably manage forests, combat desertification, and halt and reverse land degradation and halt biodiversity loss",
+         "details": "https://www.undp.org/sustainable-development-goals/life-on-land"},
+    16: {"name": "SDG 16",
+         "title": "Peace, Justice and Strong Institutions",
+         "description": "Promote peaceful and inclusive societies for sustainable development, provide access to justice for all and build effective, accountable and inclusive institutions at all levels",
+         "details": "https://www.undp.org/sustainable-development-goals/peace-justice-and-strong-institutions"}
+}
+
+
 t1, t2 = st.columns(2)
 with t1:
     st.markdown('## Sustainable Development Goal Classifier for Academic Papers')
@@ -20,7 +97,7 @@ with t2:
 
 st.write("")
 st.markdown("""
-The Sustainable Development Goal (SDG) classifier, non-creatively nicknamed ASGARD, is designed to categorize academic research papers into one or more of the inspiring SDGs.
+The Sustainable Development Goal (SDG) classifier (a.k.a ASGARD), is designed to categorize academic research papers into one or more of the inspiring SDGs.
 
 With this remarkable technology, we can unlock the immense potential of academic research by connecting it directly to the 
 global agenda for sustainable development. 
@@ -79,24 +156,80 @@ if st.button("Submit"):
     # example: Law enforcement effects on marine life preservation in the South Pacific
     
     threshold = 0.5
-    probabilities = np.fromstring(response.json()['message'][2:-2], sep=" ")
-
-    probabilities = pd.DataFrame(data={"Probability": probabilities,
-                                       "Sustainable Development Goals": [f"SDG {i+1}" for i in range(16)],
-                                       "Classes": ["Positive" if prob else "Negative" for prob in (probabilities >= 0.5)],
-                                       "Order": [i for i in range(16)]},
-                                 )
+    probabilities = np.round(np.fromstring(response.json()['message'][2:-2], sep=" "), 3)
+    # st.write(str(probabilities))
     
-    bars = alt.Chart(probabilities).mark_bar().encode(
-        x=alt.X('Sustainable Development Goals:O', sort=None), 
-        y=alt.Y("Probability:Q", scale=alt.Scale(domain=(0, 1.0))),
-        color=alt.condition(
-            alt.datum.Probability >= threshold,  # If the probability is higher or equal 0.5 returns True,
-            alt.value('orange'),     # which sets the bar orange.
-            alt.value('steelblue')   # And if it's not true it sets the bar steelblue.
-            ),
-        order=alt.Order('Order:Q')
+    data = pd.DataFrame(data={"Probability": probabilities,
+                              "Sustainable Development Goals": [f"SDG {i+1}" for i in range(16)],
+                              "SDG": [f"SDG {i+1}" for i in range(16)],
+                              "Classes": ["Positive" if prob else "Negative" for prob in (probabilities >= 0.5)],
+                              "Order": [i+1 for i in range(16)]},
+                        )
+    
+    labels = data.loc[data["Classes"] == "Positive", "Order"].values.tolist()
+    
+    # CLASSIFICATION REPORT
+    st.markdown('## Classification Report')
+    
+    if len(labels) == 0:
+        st.write("ASGARD could not relate your input to any of the Sustainable Development Goals. :confused:")
+        st.write("_Tip: You can try again using other terms. Try to be more specific and key-word oriented._")
+    else:
+        st.write("ASGARD linked your input text to the following Sustainable Development Goal(s):")
+        for label in labels:
+            st.write(f"##### {SDG[label]['name']}: {SDG[label]['title']}")
+            st.write(f"**Description**: {SDG[label]['description']}. [Learn more]({SDG[label]['details']}).")
+    
+    
+    # MORE DETAILS ABOUT THE PREDICTION
+    with st.expander("Expand for More Details About the Classification"):
+        
+        # Create the custom color scale
+        color_scale = alt.Scale(
+            domain=[0, 0.5, 0.8, 1],
+            range=['steelblue', 'yellow', 'orange']
         )
-    
-    st.altair_chart((bars).properties(width=600), use_container_width=True)
+
+        # Create the chart
+        bars = alt.Chart(data).mark_bar().encode(
+            x=alt.X('Sustainable Development Goals:N', sort=None, axis=alt.Axis(labelFontSize=9, labelAngle=0)), 
+            y=alt.Y("Probability:Q", scale=alt.Scale(domain=(0, 1.0))),
+            color=alt.Color(
+                'Probability:Q',
+                scale=color_scale,
+                legend=alt.Legend(title='Probability', labelFontSize=10, titleFontSize=12, symbolSize=150)
+            ),
+            order=alt.Order('Order:Q'),
+            tooltip=[alt.Tooltip("SDG:N"), 
+                     alt.Tooltip("Probability:Q")]
+            )
+        
+        # Add text mark for y-axis values
+        text = bars.mark_text(
+            align='center',
+            baseline='bottom',
+            dy=-5,  # Adjust the vertical offset as needed
+            fontSize=10
+        ).encode(
+            text=alt.Text('Probability:Q', format='.3f')
+        )
+        
+        # Combine the bars and text marks and Set the title
+        chart = (bars + text).properties(
+            width=600, 
+            title='Predicted Probability of Text-SDG Association'
+            )
+
+        st.altair_chart(chart, use_container_width=True)
+        
+        st.write("""
+            <p class="small-font"><em>ASGARD provides the probability for each label's association with the Sustainable Development Goals (SDGs). 
+            A probability threshold of 0.5 is used to determine whether a given input is related to an SDG or not. 
+            Consequently, the higher the output probability towards 1.0, the greater the model's certainty regarding  
+            that prediction. It is important to bear this in mind, as output probabilities ranging from 0.5 to 0.8 
+            are considered as positive classifications with low confidence.</em></p>
+            """,
+            unsafe_allow_html=True)
+        
+    # EXPLAINABLE AI
     
