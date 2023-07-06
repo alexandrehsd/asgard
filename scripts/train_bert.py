@@ -97,7 +97,7 @@ def train_model(
 
     # Logging metrics
     if log:
-        log_to_wandb(model, valid_set, test_set, emissions_tracker)
+        log_to_wandb(model, valid_set, test_set, emissions_tracker, model_architecture)
         wandb.save(os.path.join(wandb.run.dir, "model"))
     else:
         y_pred = (model.predict(test_set) > 0.5) + 0

@@ -7,6 +7,8 @@ import wandb
 from tensorflow import keras
 # tf.config.run_functions_eagerly(True)
 
+from codecarbon import EmissionsTracker
+from asgard.metrics.metrics import HammingScoreMetric
 from asgard.callbacks.callbacks import EarlyStoppingHammingScore
 from asgard.metrics.metrics import (
     compute_binary_metrics,
@@ -34,6 +36,7 @@ def train_model(
     output_sequence_length,
     epochs,
     output_path,
+    model_architecture,
     log=True,
 ):
     # train preparation
@@ -61,7 +64,11 @@ def train_model(
         optimizer = keras.optimizers.RMSprop(learning_rate, clipnorm=1, centered=True)
 
     LOGGER.info("Building model.")
+    emissions_tracker = EmissionsTracker(log_level="critical")
+    emissions_tracker.start()
+    
     n_outputs = 16
+    metrics = [HammingScoreMetric()]
     model = build_model(
         n_outputs,
         text_vectorization_layer,
@@ -71,6 +78,7 @@ def train_model(
         dropout,
         constraint,
         n_hidden,
+        metrics=metrics
     )
 
     # Define callbacks
@@ -78,7 +86,7 @@ def train_model(
     run_logdir = os.path.join(output_path, "rnn", "logs", run_id)
 
     tensorboard_cb = keras.callbacks.TensorBoard(run_logdir)
-    early_stopping_cb = EarlyStoppingHammingScore(monitor="val_hamming_score", patience=0, min_delta=0.002)
+    early_stopping_cb = EarlyStoppingHammingScore(monitor="val_hamming_score", patience=1, min_delta=0.002)
     wandb_cb = wandb.keras.WandbCallback(monitor="val_hamming_score", mode="max")
     
     callbacks = [tensorboard_cb, early_stopping_cb, wandb_cb]
@@ -87,11 +95,13 @@ def train_model(
     history = model.fit(
         train_set, validation_data=valid_set, epochs=epochs, callbacks=callbacks
     )
+    
+    emissions_tracker.stop()
 
     # Logging metrics
     if log:
-        log_to_wandb(model, valid_set, test_set)
-        wandb.save(os.path.join(wandb.run.dir, "model.h5"))
+        log_to_wandb(model, valid_set, test_set, emissions_tracker, model_architecture)
+        wandb.save(os.path.join(wandb.run.dir, "model"))
     else:
         y_pred = (model.predict(test_set) > 0.5) + 0
         y_true = np.concatenate([y.numpy() for X, y in test_set])
@@ -186,6 +196,14 @@ if __name__ == "__main__":
         help="Rate of the learning rate decay",
         default=2.0,
     )
+    parser.add_argument(
+        "-arg11",
+        "--model_architecture",
+        type=str,
+        required=True,
+        help="Model Architecture",
+        default="rnn",
+    )
     args = parser.parse_args()
 
     # learning rate definition
@@ -223,6 +241,7 @@ if __name__ == "__main__":
     dropout = args.dropout
     n_hidden = args.n_hidden
     epochs = args.epochs
+    model_architecture = args.model_architecture
     output_path = "./training_runs"
 
     LOGGER.info("Starting training routine.")
@@ -240,4 +259,5 @@ if __name__ == "__main__":
         output_sequence_length,
         epochs,
         output_path,
+        model_architecture
     )
