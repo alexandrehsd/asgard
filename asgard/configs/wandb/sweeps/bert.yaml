@@ -1,7 +1,7 @@
 # bert.yaml
 program: scripts/train_bert.py
-name: "ASGARD-BERT"
-project: "ASGARD-BERT"
+name: "ASGARD"
+project: "ASGARD"
 method: random
 metric:
   name: Hamming Score

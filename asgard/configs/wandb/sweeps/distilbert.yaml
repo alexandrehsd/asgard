@@ -1,7 +1,7 @@
 # distilbert.yaml
 program: scripts/train_bert.py
-name: "ASGARD-DistilBERT"
-project: "ASGARD-DistilBERT"
+name: "ASGARD"
+project: "ASGARD"
 method: random
 metric:
   name: Hamming Score
