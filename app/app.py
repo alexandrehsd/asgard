@@ -131,7 +131,7 @@ with st.sidebar.expander("Click to learn more about ASGARD"):
     
     The model card and source code of this project is available on [GitHub](https://github.com/alexandrehsd/asgard).
     
-    *Released on July 1st, 2023*  
+    *Released on August 31st, 2023*  
     """)
 
 st.markdown('## Try it out')
@@ -163,7 +163,9 @@ if st.button("Submit"):
                               "Sustainable Development Goals": [f"SDG {i+1}" for i in range(16)],
                               "SDG": [f"SDG {i+1}" for i in range(16)],
                               "Classes": ["Positive" if prob else "Negative" for prob in (probabilities >= 0.5)],
-                              "Order": [i+1 for i in range(16)]},
+                              "Order": [i+1 for i in range(16)],
+                              "Description": [SDG[i+1]["title"] for i in range(16)]
+                              },
                         )
     
     labels = data.loc[data["Classes"] == "Positive", "Order"].values.tolist()
@@ -201,6 +203,7 @@ if st.button("Submit"):
             ),
             order=alt.Order('Order:Q'),
             tooltip=[alt.Tooltip("SDG:N"), 
+                     alt.Tooltip("Description:N"), 
                      alt.Tooltip("Probability:Q")]
             )
         
