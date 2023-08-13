@@ -133,5 +133,5 @@ dmypy.json
 
 training_runs/
 artifacts/
-wandb/
+/wandb/
 emissions.csv
