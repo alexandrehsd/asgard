@@ -115,7 +115,7 @@ for more details related to the SDGs, please visit https://sdgs.un.org/goals.
 
 
 with st.sidebar.expander("Click to learn more about ASGARD"):
-    st.markdown(f"""
+    st.markdown("""
     The United Nations created the 17 Sustainable Development Goals (SDGs) to promote
     environmental protection, economic growth, and social justice. In this scenario, science is crucial
     to solving the challenges addressed by the SDGs.

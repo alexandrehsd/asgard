@@ -83,7 +83,6 @@ def throne():
         name_list.append(run.name)
         id_list.append(run.id)
         
-    summary_throne = None
     config_throne = None
     epochs_throne = None
     model_name_throne = None
@@ -98,7 +97,6 @@ def throne():
         
         if fgreen_curr > fgreen_throne:
             fgreen_throne = fgreen_curr
-            summary_throne = summary
             config_throne = config
             model_name_throne = model_name
             id_throne = run_id
