@@ -14,7 +14,15 @@ def build_model(encoder_handler, preprocess_handler, n_outputs, optimizer, loss,
 
     net = outputs["pooled_output"]
     net = tf.keras.layers.Dropout(dropout)(net)
-    net = tf.keras.layers.Dense(n_outputs, activation="sigmoid", name="classifier")(net)
+    
+    kernel_initializer = tf.keras.initializers.GlorotNormal(seed=42)
+    kernel_regularizer = tf.keras.regularizers.L2()
+    
+    net = tf.keras.layers.Dense(n_outputs, 
+                                activation="sigmoid", 
+                                kernel_initializer=kernel_initializer,
+                                kernel_regularizer=kernel_regularizer,
+                                name="classifier")(net)
     model = tf.keras.Model(text_input, net)
 
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
