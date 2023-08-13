@@ -21,6 +21,11 @@ async def startup_event():
     ModelsLoaderSingleton.instance()
 
 
+@app.put("/update")
+async def update_model():
+    ModelsLoaderSingleton.update_model()
+
+
 @app.post("/api")
 async def api(payload: Payload):
 
