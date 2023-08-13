@@ -9,6 +9,7 @@ lint = [
 ]
 dev = [
     "jupyter>=1.0.0",
+    "seaborn>=0.12.2",
 ]
 api = [
     "tensorflow>=2.11.0",
@@ -83,12 +84,13 @@ dependencies = [
     "zipp==3.13.0",
     "nltk>=3.8.1",
     "spacy>=3.5.0",
-    "scikit-learn>=1.2.1",
+    "scikit-learn==1.2.1",
     "dvc[gdrive]>=2.54.0",
     "wandb>=0.14.2",
     "tensorflow-text>=2.11.0",
     "tf-models-official>=2.11.6",
-    "codecarbon>=2.2.4"
+    "codecarbon>=2.2.4",
+    "scipy==1.8.1",
 ]
 requires-python = "==3.9.13"
 license = {text = "MIT"}
@@ -160,8 +162,7 @@ omit = [
     "asgard/dataset/create_dataset.py",
     "asgard/metrics/__init__.py",
     "asgard/models/__init__.py",
-    "asgard/utils/__init__.py",
-    "asgard/utils/data_loader.py"
+    "asgard/utils/*.py"
 ]
 
 [tool.coverage.report]
